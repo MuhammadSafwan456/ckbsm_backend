@@ -3,3 +3,7 @@ common_apis/v1/__pycache__/
 config/__pycache__/
 constants/__pycache__/
 database_layer/__pycache__/
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
