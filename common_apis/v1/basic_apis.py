@@ -15,9 +15,9 @@
 #     print("j",i)
 
 from constants.flask_constants import DEBUG, GET, POST, PUT, DELETE
-
-import flask
 from flask import jsonify, request
+import flask
+
 
 app = flask.Flask(__name__)
 app.config[DEBUG] = True

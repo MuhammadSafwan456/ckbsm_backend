@@ -1,13 +1,14 @@
 import mysql.connector
 from config.database_config import DB_NAME, DB_HOST, DB_PASSWORD, DB_USERNAME
 from constants.database_constants import NO_CONNECTION, NO_CURSOR
+
 my_db = NO_CONNECTION
 my_cursor = NO_CURSOR
 
 
-def change_database_query():
+def use_database_query():
     """
-    generate query to Use database
+    generate query to use database
     """
 
     return "USE " + DB_NAME
@@ -21,7 +22,7 @@ def make_connection():
     global my_db, my_cursor
     my_db = mysql.connector.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD)
     my_cursor = my_db.cursor()
-    query = change_database_query()
+    query = use_database_query()
     execute_query(query)
 
 
