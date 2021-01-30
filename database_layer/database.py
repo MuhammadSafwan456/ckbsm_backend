@@ -5,7 +5,7 @@ my_db = NO_CONNECTION
 my_cursor = NO_CURSOR
 
 
-def generate_use_query():
+def change_database_query():
     """
     generate query to Use database
     """
@@ -21,7 +21,7 @@ def make_connection():
     global my_db, my_cursor
     my_db = mysql.connector.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD)
     my_cursor = my_db.cursor()
-    query = generate_use_query()
+    query = change_database_query()
     execute_query(query)
 
 

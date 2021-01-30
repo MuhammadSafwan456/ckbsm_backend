@@ -3,5 +3,5 @@ config = {
     'DB_USERNAME': 'root',
     'DB_PASSWORD': '0900',
     'DB_HOST': 'localhost',
-    'DB_NAME': 'information_schema',
+    'DB_NAME': 'ckbsm_db',
 }
