@@ -10,7 +10,6 @@ def use_database_query():
     """
     generate query to use database
     """
-
     return "USE " + DB_NAME
 
 
@@ -18,7 +17,6 @@ def make_connection():
     """"
     make connection to database & use that database
     """
-
     global my_db, my_cursor
     my_db = mysql.connector.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD)
     my_cursor = my_db.cursor()
