@@ -27,7 +27,7 @@ app = flask.Flask(__name__)
 app.config[DEBUG] = True
 
 
-def missing_parameter(parameter):
+def make_missing_parameter_response(parameter):
     response = {
         RESPONSE_CODE: PARAMETER_MISSING,
         RESPONSE_DETAIL: parameter + " is missing"
@@ -40,18 +40,21 @@ def login():
     request_body = request.get_json()
 
     if not request_body.get(USERNAME) and not request_body.get(PASSWORD):
-        response = missing_parameter(USERNAME + " & " + PASSWORD)
+        response = make_missing_parameter_response(USERNAME + " & " + PASSWORD)
         return response, BAD_REQUEST
 
     elif not request_body.get(USERNAME):
-        response = missing_parameter(USERNAME)
+        response = make_missing_parameter_response(USERNAME)
         return response, BAD_REQUEST
 
     elif not request_body.get(PASSWORD):
-        response = missing_parameter(PASSWORD)
+        response = make_missing_parameter_response(PASSWORD)
         return response, BAD_REQUEST
-
-    return jsonify(request_body)
+    response = {
+        RESPONSE_CODE: SUCCESS,
+        RESPONSE_DETAIL: "Admin Object"
+    }
+    return response, OK
 
 
 @app.route(ADMIN_DASHBOARD, methods=[GET])
