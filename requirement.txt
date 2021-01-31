@@ -1,4 +1,2 @@
 mysql-connector-python
 flask
-numpy
-pandas
