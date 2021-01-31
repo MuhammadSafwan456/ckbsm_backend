@@ -14,7 +14,7 @@
 # for i in a:
 #     print("j",i)
 
-from constants.flask_constants import DEBUG, GET, POST, PUT, DELETE
+from constants.flask_constants import *
 from constants.route_constants import *
 from codes.status_codes import *
 from codes.response_codes import *
