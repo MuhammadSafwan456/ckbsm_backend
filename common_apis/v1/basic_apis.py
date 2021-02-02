@@ -20,6 +20,7 @@ from codes.status_codes import *
 from codes.response_codes import *
 from constants.general_constants import *
 from flask import jsonify, request
+from database_layer.database import execute_query
 import flask
 
 
@@ -47,16 +48,34 @@ def verify_param(required, recieved):
 @app.route(LOGIN, methods=[POST])
 def login():
     request_body = request.get_json()
-    missing = verify_param([PASSWORD, USERNAME], request_body)
+    missing = verify_param([USERNAME, PASSWORD], request_body)
     if missing:
         response = make_missing_parameter_response(missing)
         return response, BAD_REQUEST
+    query = f"Select * from admin where username = '{request_body.get(USERNAME)}' and password = '{request_body.get(PASSWORD)}'"
+    print(query)
 
-    response = {
-        RESPONSE_CODE: SUCCESS,
-        RESPONSE_DETAIL: "Admin Object"
-    }
-    return response, OK
+    r = execute_query(query)
+    result = r.fetchall()
+    if len(result) != 0:
+        if result[0][0] == request_body.get(USERNAME) and result[0][1] == request_body.get(PASSWORD):
+            response = {
+                RESPONSE_CODE: SUCCESS,
+                RESPONSE_DETAIL: "SUCCESS"
+            }
+            return response, OK
+        else:
+            response = {
+                RESPONSE_CODE: ADMIN_NOT_FOUND,
+                RESPONSE_DETAIL: "Incorrect Credentials"
+            }
+            return response, OK
+    else:
+        response = {
+            RESPONSE_CODE: ADMIN_NOT_FOUND,
+            RESPONSE_DETAIL: "Incorrect Credentials"
+        }
+        return response, OK
 
 
 @app.route(ADMIN_DASHBOARD, methods=[GET])
