@@ -1,19 +1,3 @@
-# from database_layer.database import execute_query
-# from config import database_config
-# print(database_config.get_config("DB_USERNAME"))
-# print("___________________first_______________")
-# a = execute_query("SHOW TABLES")
-# # print("A",a)
-# for i in a:
-#     print("i",i)
-#
-#
-# print("\n___________________Second_______________")
-# a = execute_query("SHOW TABLES")
-# # print("A",a)
-# for i in a:
-#     print("j",i)
-
 from constants.flask_constants import *
 from constants.route_constants import *
 from codes.status_codes import *
@@ -53,8 +37,7 @@ def login():
         response = make_missing_parameter_response(missing)
         return response, BAD_REQUEST
     query = f"Select * from admin where username = '{request_body.get(USERNAME)}' and password = '{request_body.get(PASSWORD)}'"
-    print(query)
-
+    # print(query)
     r = execute_query(query)
     result = r.fetchall()
     if len(result) != 0:
@@ -80,7 +63,78 @@ def login():
 
 @app.route(ADMIN_DASHBOARD, methods=[GET])
 def admin_dashboard():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    # admin = request.args.get(ADMIN)
+    if length_query_param == 0 :
+        response = {
+            RESPONSE_CODE: MISSING_QUERY_PARAM,
+            RESPONSE_DETAIL: "Query params are missing"
+        }
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 1:
+        response = {
+            RESPONSE_CODE: ADDITIONAL_QUERY_PARAM,
+            RESPONSE_DETAIL: "Additional Query params"
+        }
+        return response, BAD_REQUEST
+    elif not query_params.get(ADMIN):
+            response = {
+                RESPONSE_CODE: INVALID_QUERY_PARAM,
+                RESPONSE_DETAIL: "Invalid query params"
+            }
+            return response, BAD_REQUEST
+
+    username = query_params.get(ADMIN)
+    query = f"Select username from admin where username = '{username}' "
+    print(query)
+    r = execute_query(query)
+    result = r.fetchall()
+    if len(result) == 0:
+        response = {
+            RESPONSE_CODE: ADMIN_NOT_FOUND,
+            RESPONSE_DETAIL: "Admin not found"
+        }
+        return response, OK
+
+    query = "select count(id) from madrassa"
+    r = execute_query(query)
+    result = r.fetchall()
+    madrassa_count = result[0][0]
+
+    query = "select count(id) from course"
+    r = execute_query(query)
+    result = r.fetchall()
+    course_count = result[0][0]
+
+    query = "select count(id) from shift"
+    r = execute_query(query)
+    result = r.fetchall()
+    shift_count = result[0][0]
+
+    query = "select count(id) from enrollment where role_id = 0"
+    r = execute_query(query)
+    result = r.fetchall()
+    teacher_count = result[0][0]
+
+    query = "select count(id) from enrollment where role_id = 1"
+    r = execute_query(query)
+    result = r.fetchall()
+    student_count = result[0][0]
+
+    response = {
+        RESPONSE_CODE: SUCCESS,
+        RESPONSE_DETAIL: "Success",
+        DATA: {
+            'totalStudents': student_count,
+            'totalTeachers':teacher_count,
+            'totalShifts':shift_count,
+            'totalCourses':course_count,
+            'totalMadrassas':madrassa_count
+        }
+    }
+    return response, OK
 
 
 @app.route(GET_ROLES, methods=[GET])

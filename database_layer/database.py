@@ -33,4 +33,3 @@ def execute_query(query):
 
     my_cursor.execute(query)
     return my_cursor
-
