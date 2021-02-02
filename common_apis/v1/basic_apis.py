@@ -35,21 +35,23 @@ def make_missing_parameter_response(parameter):
     return response
 
 
+def verify_param(required, recieved):
+    for req in required:
+        if req in recieved:
+            pass
+        else:
+            return req
+    return None
+
+
 @app.route(LOGIN, methods=[POST])
 def login():
     request_body = request.get_json()
-
-    if not request_body.get(USERNAME) and not request_body.get(PASSWORD):
-        response = make_missing_parameter_response(USERNAME + " & " + PASSWORD)
+    missing = verify_param([PASSWORD, USERNAME], request_body)
+    if missing:
+        response = make_missing_parameter_response(missing)
         return response, BAD_REQUEST
 
-    elif not request_body.get(USERNAME):
-        response = make_missing_parameter_response(USERNAME)
-        return response, BAD_REQUEST
-
-    elif not request_body.get(PASSWORD):
-        response = make_missing_parameter_response(PASSWORD)
-        return response, BAD_REQUEST
     response = {
         RESPONSE_CODE: SUCCESS,
         RESPONSE_DETAIL: "Admin Object"
