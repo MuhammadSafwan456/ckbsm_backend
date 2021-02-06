@@ -21,10 +21,10 @@ def make_connection():
     my_db = mysql.connector.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD)
     my_cursor = my_db.cursor()
     query = use_database_query()
-    execute_query(query)
+    select_query(query)
 
 
-def execute_query(query):
+def select_query(query):
     """
     execute the query & return the cursor
     """
@@ -33,3 +33,17 @@ def execute_query(query):
 
     my_cursor.execute(query)
     return my_cursor
+
+def insert_query(query):
+    """
+    execute the query & return the cursor
+    """
+    if my_db == NO_CONNECTION:
+        make_connection()
+
+    my_cursor.execute(query)
+    my_db.commit()
+    if my_cursor.rowcount > 0:
+        return True
+    return False
+

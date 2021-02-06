@@ -4,3 +4,6 @@ DATA = "data"
 USERNAME = 'username'
 ADMIN='admin'
 PASSWORD = 'password'
+ID = 'id'
+NAME = 'name'
+DELETED = 'deleted'

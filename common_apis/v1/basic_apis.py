@@ -1,14 +1,25 @@
 from constants.flask_constants import *
+from constants.table_names import *
 from constants.route_constants import *
 from codes.status_codes import *
 from codes.response_codes import *
 from constants.general_constants import *
 from flask import request
-from database_layer.database import execute_query
+from database_layer.database import select_query, insert_query
 import flask
 
 app = flask.Flask(__name__)
 app.config[DEBUG] = True
+
+
+def select_max(table):
+    query = f'select max(id) from {table}'
+    r = select_query(query)
+    result = r.fetchall()
+    print("________________IN SELECT MAX RESULT _________-", result[0][0])
+    if result[0][0]:
+        return result[0][0]
+    return 0
 
 
 def make_general_response(code, detail):
@@ -45,7 +56,7 @@ def login():
         return response, BAD_REQUEST
 
     query = f"Select * from admin where username = '{request_body.get(USERNAME)}' and password = '{request_body.get(PASSWORD)}' "
-    r = execute_query(query)
+    r = select_query(query)
     result = r.fetchall()
     if len(result) != 0:
         if result[0][0] == request_body.get(USERNAME) and result[0][1] == request_body.get(PASSWORD):
@@ -62,7 +73,7 @@ def login():
 @app.route(ADMIN_DASHBOARD, methods=[GET])
 def admin_dashboard():
     def first_row_first_col(query):
-        res = execute_query(query)
+        res = select_query(query)
         res = res.fetchall()
         count = res[0][0]
         return count
@@ -85,7 +96,7 @@ def admin_dashboard():
     username = query_params.get(ADMIN)
     query = f"Select username from admin where username = '{username}' "
     print(query)
-    r = execute_query(query)
+    r = select_query(query)
     result = r.fetchall()
     if len(result) == 0:
         response = make_general_response(ADMIN_NOT_FOUND, "Admin not found")
@@ -119,22 +130,107 @@ def admin_dashboard():
 
 @app.route(GET_ROLES, methods=[GET])
 def get_roles():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query = "select * from role"
+    r = select_query(query)
+    result = r.fetchall()
+    data = []
+    for i in result:
+        data.append({
+            ID: i[0],
+            NAME: i[1]
+        })
+
+    response = make_general_response(SUCCESS, "Success")
+    response[DATA] = data
+    return response, OK
 
 
 @app.route(ADD_ROLES, methods=[POST])
 def add_roles():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([NAME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+    index = select_max(ROLE) + 1
+
+    query = f"insert into role(id,role_name) values({index},'{request_body[NAME]}')"
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from role where id = {index}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, OK
 
 
 @app.route(UPDATE_ROLES, methods=[PUT])
 def update_roles():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([ID, NAME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    query = f"update role set role_name = '{request_body[NAME]}' where id = {request_body[ID]}"
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from role where id = {request_body[ID]}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found")
+        return response, OK
+    # return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(DELETE_ROLES, methods=[DELETE])
 def delete_roles():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 2:
+        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(ID):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    query = f'delete from role where id={query_params[ID]}'
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DELETED] = r
+        return response, CREATED
+
+    else:
+        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found")
+        response[DELETED] = r
+        return response, OK
 
 
 @app.route(GET_SHIFTS, methods=[GET])
