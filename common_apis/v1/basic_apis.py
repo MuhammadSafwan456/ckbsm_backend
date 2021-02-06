@@ -4,19 +4,54 @@ from constants.route_constants import *
 from codes.status_codes import *
 from codes.response_codes import *
 from constants.general_constants import *
+from config.app_config import JWT_SECRET_KEY
 from flask import request
 from database_layer.database import select_query, insert_query
+from hashlib import sha256
+from functools import wraps
 import flask
+import jwt
+import datetime
 
 app = flask.Flask(__name__)
 app.config[DEBUG] = True
+app.config[SECRET_KEY] = sha256(JWT_SECRET_KEY.encode(ASCII)).hexdigest()
+
+
+def authorize_request(f):
+    @wraps(f)
+    def wrap(*args, **kwargs):
+        token = None
+        if 'x-access-token' in request.headers:
+            token = request.headers['x-access-token']
+
+        if not token:
+            response = make_general_response(MISSING_TOKEN, 'token is misiing')
+            return response, UNAUTHORIZED
+
+        try:
+            algorithm = "HS256"
+            data = jwt.decode(token, app.config[SECRET_KEY], algorithms=[algorithm])
+            print('data',data)
+            query = f"Select password from admin where username = '{data.get(USERNAME)}'"
+            r = select_query(query)
+            result = r.fetchall()
+            password = result[0][0]
+            hashed_password = sha256(password.encode(ASCII)).hexdigest()
+            if hashed_password == data.get(PASSWORD):
+                return f(*args, **kwargs)
+
+        except:
+            response = make_general_response(INVALID_TOKEN, 'token is invalid')
+            return response, UNAUTHORIZED
+
+    return wrap
 
 
 def select_max(table):
     query = f'select max(id) from {table}'
     r = select_query(query)
     result = r.fetchall()
-    print("________________IN SELECT MAX RESULT _________-", result[0][0])
     if result[0][0]:
         return result[0][0]
     return 0
@@ -47,30 +82,45 @@ def verify_param(required, recieved):
     return None
 
 
-@app.route(LOGIN, methods=[POST])
+@app.route(LOGIN, methods=[GET])
 def login():
-    request_body = request.get_json()
-    missing = verify_param([USERNAME, PASSWORD], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
+    auth_body = request.authorization
 
-    query = f"Select * from admin where username = '{request_body.get(USERNAME)}' and password = '{request_body.get(PASSWORD)}' "
+    print("__________--", auth_body)
+    if not auth_body or not auth_body.get(USERNAME) or not auth_body.get(PASSWORD):
+        response = make_general_response(FAIL, "Authorization Missing")
+        return response, UNAUTHORIZED
+
+    # missing = verify_param([USERNAME, PASSWORD], auth_body)
+    # if missing:
+    #     response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+    #     return response, BAD_REQUEST
+
+    query = f"Select * from admin where username = '{auth_body.get(USERNAME)}' and password = '{auth_body.get(PASSWORD)}' "
     r = select_query(query)
     result = r.fetchall()
     if len(result) != 0:
-        if result[0][0] == request_body.get(USERNAME) and result[0][1] == request_body.get(PASSWORD):
+        if result[0][0] == auth_body.get(USERNAME) and result[0][1] == auth_body.get(PASSWORD):
             response = make_general_response(SUCCESS, "SUCCESS")
+            token = jwt.encode(
+                {
+                    "username": auth_body.get(USERNAME),
+                    "password": sha256(auth_body.get(PASSWORD).encode(ASCII)).hexdigest()
+                }, app.config[SECRET_KEY])
+            print("______TOKEN", token)
+            response[TOKEN] = token
+
             return response, OK
         else:
-            response = make_general_response(ADMIN_NOT_FOUND, "Incorrect Credentials")
-            return response, OK
+            response = make_general_response(ADMIN_NOT_FOUND, "Could not verify")
+            return response, UNAUTHORIZED
     else:
-        response = make_general_response(ADMIN_NOT_FOUND, "Incorrect Credentials")
-        return response, OK
+        response = make_general_response(ADMIN_NOT_FOUND, "Could not verify")
+        return response, UNAUTHORIZED
 
 
 @app.route(ADMIN_DASHBOARD, methods=[GET])
+@authorize_request
 def admin_dashboard():
     def first_row_first_col(query):
         res = select_query(query)
@@ -95,7 +145,6 @@ def admin_dashboard():
 
     username = query_params.get(ADMIN)
     query = f"Select username from admin where username = '{username}' "
-    print(query)
     r = select_query(query)
     result = r.fetchall()
     if len(result) == 0:
@@ -129,6 +178,7 @@ def admin_dashboard():
 
 
 @app.route(GET_ROLES, methods=[GET])
+@authorize_request
 def get_roles():
     query = "select * from role"
     r = select_query(query)
@@ -146,6 +196,7 @@ def get_roles():
 
 
 @app.route(ADD_ROLES, methods=[POST])
+@authorize_request
 def add_roles():
     request_body = request.get_json()
     missing = verify_param([NAME], request_body)
@@ -157,7 +208,6 @@ def add_roles():
     query = f"insert into role(id,role_name) values({index},'{request_body[NAME]}')"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from role where id = {index}"
         r = select_query(query)
         result = r.fetchall()
@@ -175,6 +225,7 @@ def add_roles():
 
 
 @app.route(UPDATE_ROLES, methods=[PUT])
+@authorize_request
 def update_roles():
     request_body = request.get_json()
     missing = verify_param([ID, NAME], request_body)
@@ -185,7 +236,6 @@ def update_roles():
     query = f"update role set role_name = '{request_body[NAME]}' where id = {request_body[ID]}"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from role where id = {request_body[ID]}"
         r = select_query(query)
         result = r.fetchall()
@@ -203,6 +253,7 @@ def update_roles():
 
 
 @app.route(DELETE_ROLES, methods=[DELETE])
+@authorize_request
 def delete_roles():
     query_params = request.args
     length_query_param = len(query_params)
@@ -221,7 +272,6 @@ def delete_roles():
     query = f'delete from role where id={query_params[ID]}'
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         response = make_general_response(SUCCESS, "SUCCESS")
         response[DELETED] = r
         return response, CREATED
@@ -233,6 +283,7 @@ def delete_roles():
 
 
 @app.route(GET_SHIFTS, methods=[GET])
+@authorize_request
 def get_shifts():
     query = "select * from shift"
     r = select_query(query)
@@ -252,6 +303,7 @@ def get_shifts():
 
 
 @app.route(ADD_SHIFT, methods=[POST])
+@authorize_request
 def add_shifts():
     request_body = request.get_json()
     missing = verify_param([NAME, START_TIME, END_TIME], request_body)
@@ -264,7 +316,6 @@ def add_shifts():
             f"values({index},'{request_body[NAME]}','{request_body[START_TIME]}','{request_body[END_TIME]}')"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from shift where id = {index}"
         r = select_query(query)
         result = r.fetchall()
@@ -286,6 +337,7 @@ def add_shifts():
 
 
 @app.route(UPDATE_SHIFT, methods=[PUT])
+@authorize_request
 def update_shifts():
     request_body = request.get_json()
     missing = verify_param([ID, NAME, START_TIME, END_TIME], request_body)
@@ -296,10 +348,8 @@ def update_shifts():
     query = f"update shift" \
             f" set shift_name = '{request_body[NAME]}' , start_time = '{request_body[START_TIME]}', " \
             f"end_time= '{request_body[END_TIME]}' where id = {request_body[ID]}"
-    print(query)
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from shift where id = {request_body[ID]}"
         r = select_query(query)
         result = r.fetchall()
@@ -320,6 +370,7 @@ def update_shifts():
 
 
 @app.route(DELETE_SHIFTS, methods=[DELETE])
+@authorize_request
 def delete_shifts():
     query_params = request.args
     length_query_param = len(query_params)
@@ -338,7 +389,6 @@ def delete_shifts():
     query = f'delete from shift where id={query_params[ID]}'
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         response = make_general_response(SUCCESS, "SUCCESS")
         response[DELETED] = r
         return response, CREATED
@@ -352,6 +402,7 @@ def delete_shifts():
 
 
 @app.route(GET_COURSES, methods=[GET])
+@authorize_request
 def get_course():
     query = "select * from course"
     r = select_query(query)
@@ -369,6 +420,7 @@ def get_course():
 
 
 @app.route(ADD_COURSES, methods=[POST])
+@authorize_request
 def add_courses():
     request_body = request.get_json()
     missing = verify_param([NAME], request_body)
@@ -380,7 +432,6 @@ def add_courses():
     query = f"insert into course(id,course_name) values({index},'{request_body[NAME]}')"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from course where id = {index}"
         r = select_query(query)
         result = r.fetchall()
@@ -397,8 +448,8 @@ def add_courses():
         return response, OK
 
 
-
 @app.route(UPDATE_COURSES, methods=[PUT])
+@authorize_request
 def update_courses():
     request_body = request.get_json()
     missing = verify_param([ID, NAME], request_body)
@@ -409,7 +460,6 @@ def update_courses():
     query = f"update course set course_name = '{request_body[NAME]}' where id = {request_body[ID]}"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from course where id = {request_body[ID]}"
         r = select_query(query)
         result = r.fetchall()
@@ -426,8 +476,8 @@ def update_courses():
         return response, OK
 
 
-
 @app.route(DELETE_COURSES, methods=[DELETE])
+@authorize_request
 def delete_courses():
     query_params = request.args
     length_query_param = len(query_params)
@@ -446,7 +496,6 @@ def delete_courses():
     query = f'delete from course where id={query_params[ID]}'
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         response = make_general_response(SUCCESS, "SUCCESS")
         response[DELETED] = r
         return response, CREATED
@@ -458,6 +507,7 @@ def delete_courses():
 
 
 @app.route(GET_MADRASSAS, methods=[GET])
+@authorize_request
 def get_madrassas():
     query = "select * from madrassa"
     r = select_query(query)
@@ -475,6 +525,7 @@ def get_madrassas():
 
 
 @app.route(ADD_MADRASSAS, methods=[POST])
+@authorize_request
 def add_madrassas():
     request_body = request.get_json()
     missing = verify_param([NAME], request_body)
@@ -486,7 +537,6 @@ def add_madrassas():
     query = f"insert into madrassa(id,madrassa_name) values({index},'{request_body[NAME]}')"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from madrassa where id = {index}"
         r = select_query(query)
         result = r.fetchall()
@@ -503,8 +553,8 @@ def add_madrassas():
         return response, OK
 
 
-
 @app.route(UPDATE_MADRASSAS, methods=[PUT])
+@authorize_request
 def update_madrassas():
     request_body = request.get_json()
     missing = verify_param([ID, NAME], request_body)
@@ -515,7 +565,6 @@ def update_madrassas():
     query = f"update madrassa set madrassa_name = '{request_body[NAME]}' where id = {request_body[ID]}"
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         query = f"select * from madrassa where id = {request_body[ID]}"
         r = select_query(query)
         result = r.fetchall()
@@ -532,9 +581,8 @@ def update_madrassas():
         return response, OK
 
 
-
-
 @app.route(DELETE_MADRASSAS, methods=[DELETE])
+@authorize_request
 def delete_madrassas():
     query_params = request.args
     length_query_param = len(query_params)
@@ -553,7 +601,6 @@ def delete_madrassas():
     query = f'delete from madrassa where id={query_params[ID]}'
     r = insert_query(query)
     if r:
-        print("......................  WAH BCCCCC")
         response = make_general_response(SUCCESS, "SUCCESS")
         response[DELETED] = r
         return response, CREATED
@@ -565,41 +612,49 @@ def delete_madrassas():
 
 
 @app.route(SET_MADRASSA_DETAILS, methods=[POST])
+@authorize_request
 def set_madrassa_details():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(GET_MADRASSA_DETAILS, methods=[GET])
+@authorize_request
 def get_madrassa_details():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(ADD_USER, methods=[POST])
+@authorize_request
 def add_user():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(GET_USERS, methods=[GET])
+@authorize_request
 def get_users():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(ENROLL_USER, methods=[POST])
+@authorize_request
 def enroll_users():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(USER_ATTENDANCE, methods=[POST])
+@authorize_request
 def user_attendance():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(BULK_USER_ATTENDANCE, methods=[POST])
+@authorize_request
 def bulk_user_attendance():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(GET_ALL_ATTENDANCE, methods=[GET])
+@authorize_request
 def get_all_attendance():
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
