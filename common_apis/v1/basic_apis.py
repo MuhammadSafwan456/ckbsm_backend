@@ -459,22 +459,109 @@ def delete_courses():
 
 @app.route(GET_MADRASSAS, methods=[GET])
 def get_madrassas():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query = "select * from madrassa"
+    r = select_query(query)
+    result = r.fetchall()
+    data = []
+    for i in result:
+        data.append({
+            ID: i[0],
+            NAME: i[1]
+        })
+
+    response = make_general_response(SUCCESS, "Success")
+    response[DATA] = data
+    return response, OK
 
 
 @app.route(ADD_MADRASSAS, methods=[POST])
 def add_madrassas():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([NAME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+    index = select_max(MADRASSA) + 1
+
+    query = f"insert into madrassa(id,madrassa_name) values({index},'{request_body[NAME]}')"
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from madrassa where id = {index}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, OK
+
 
 
 @app.route(UPDATE_MADRASSAS, methods=[PUT])
 def update_madrassas():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([ID, NAME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    query = f"update madrassa set madrassa_name = '{request_body[NAME]}' where id = {request_body[ID]}"
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from madrassa where id = {request_body[ID]}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(MADRASSA_NOT_FOUND, "MadrassaID not found")
+        return response, OK
+
+
 
 
 @app.route(DELETE_MADRASSAS, methods=[DELETE])
 def delete_madrassas():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 2:
+        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(ID):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    query = f'delete from madrassa where id={query_params[ID]}'
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DELETED] = r
+        return response, CREATED
+
+    else:
+        response = make_general_response(MADRASSA_NOT_FOUND, "MadrassaID not found")
+        response[DELETED] = r
+        return response, OK
 
 
 @app.route(SET_MADRASSA_DETAILS, methods=[POST])
