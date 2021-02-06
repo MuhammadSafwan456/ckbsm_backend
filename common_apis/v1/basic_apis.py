@@ -235,22 +235,121 @@ def delete_roles():
 
 @app.route(GET_SHIFTS, methods=[GET])
 def get_shifts():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query = "select * from shift"
+    r = select_query(query)
+    result = r.fetchall()
+    data = []
+    for i in result:
+        data.append({
+            ID: i[0],
+            NAME: i[1],
+            START_TIME: str(i[2]),
+            END_TIME: str(i[3])
+        })
+
+    response = make_general_response(SUCCESS, "Success")
+    response[DATA] = data
+    return response, OK
 
 
 @app.route(ADD_SHIFT, methods=[POST])
 def add_shifts():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([NAME, START_TIME, END_TIME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+    index = select_max(SHIFT) + 1
+
+    query = f"insert into shift(id,shift_name,start_time,end_time) " \
+            f"values({index},'{request_body[NAME]}','{request_body[START_TIME]}','{request_body[END_TIME]}')"
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from shift where id = {index}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1],
+            START_TIME: str(result[0][2]),
+            END_TIME: str(result[0][3]),
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, OK
+
+    # return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(UPDATE_SHIFT, methods=[PUT])
 def update_shifts():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    request_body = request.get_json()
+    missing = verify_param([ID, NAME, START_TIME, END_TIME], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    query = f"update shift" \
+            f" set shift_name = '{request_body[NAME]}' , start_time = '{request_body[START_TIME]}', " \
+            f"end_time= '{request_body[END_TIME]}' where id = {request_body[ID]}"
+    print(query)
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        query = f"select * from shift where id = {request_body[ID]}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            ID: result[0][0],
+            NAME: result[0][1],
+            START_TIME: str(result[0][2]),
+            END_TIME: str(result[0][3]),
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(SHIFT_NOT_FOUND, "ShiftID not found")
+        return response, OK
+    # return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(DELETE_SHIFTS, methods=[DELETE])
 def delete_shifts():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 2:
+        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(ID):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    query = f'delete from shift where id={query_params[ID]}'
+    r = insert_query(query)
+    if r:
+        print("......................  WAH BCCCCC")
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[DELETED] = r
+        return response, CREATED
+
+    else:
+        response = make_general_response(SHIFT_NOT_FOUND, "ShiftID not found")
+        response[DELETED] = r
+        return response, OK
+
+    # return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(GET_COURSES, methods=[GET])
