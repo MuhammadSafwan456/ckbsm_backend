@@ -3,8 +3,9 @@ from constants.table_names import *
 from constants.route_constants import *
 from codes.status_codes import *
 from codes.response_codes import *
-from constants.general_constants import *
+import constants.general_constants as gc
 from config.app_config import JWT_SECRET_KEY
+from constants.column_names import *
 from flask import request
 from database_layer.database import select_query, insert_query
 from hashlib import sha256
@@ -15,7 +16,7 @@ import datetime
 
 app = flask.Flask(__name__)
 app.config[DEBUG] = True
-app.config[SECRET_KEY] = sha256(JWT_SECRET_KEY.encode(ASCII)).hexdigest()
+app.config[SECRET_KEY] = sha256(JWT_SECRET_KEY.encode(gc.ASCII)).hexdigest()
 
 
 def authorize_request(f):
@@ -30,14 +31,14 @@ def authorize_request(f):
             return response, UNAUTHORIZED
 
         try:
-            algorithm = SHA256
+            algorithm = gc.SHA256
             data = jwt.decode(token, app.config[SECRET_KEY], algorithms=[algorithm])
-            query = f"Select password from admin where username = '{data.get(USERNAME)}'"
+            query = f"Select {PASSWORD} from {ADMIN} where {USERNAME} = '{data.get(gc.USERNAME)}'"
             r = select_query(query)
             result = r.fetchall()
             password = result[0][0]
-            hashed_password = sha256(password.encode(ASCII)).hexdigest()
-            if hashed_password == data.get(PASSWORD):
+            hashed_password = sha256(password.encode(gc.ASCII)).hexdigest()
+            if hashed_password == data.get(gc.PASSWORD):
                 return f(*args, **kwargs)
 
         except:
@@ -48,7 +49,7 @@ def authorize_request(f):
 
 
 def select_max(table):
-    query = f'select max(id) from {table}'
+    query = f'select max({ID}) from {table}'
     r = select_query(query)
     result = r.fetchall()
     if result[0][0]:
@@ -58,16 +59,16 @@ def select_max(table):
 
 def make_general_response(code, detail):
     response = {
-        RESPONSE_CODE: code,
-        RESPONSE_DETAIL: detail
+        gc.RESPONSE_CODE: code,
+        gc.RESPONSE_DETAIL: detail
     }
     return response
 
 
 def make_missing_parameter_response(parameter):
     response = {
-        RESPONSE_CODE: PARAMETER_MISSING,
-        RESPONSE_DETAIL: parameter + " is missing"
+        gc.RESPONSE_CODE: PARAMETER_MISSING,
+        gc.RESPONSE_DETAIL: parameter + " is missing"
     }
     return response
 
@@ -84,7 +85,7 @@ def verify_param(required, received):
 @app.route(LOGIN, methods=[GET])
 def login():
     auth_body = request.authorization
-    if not auth_body or not auth_body.get(USERNAME) or not auth_body.get(PASSWORD):
+    if not auth_body or not auth_body.get(gc.USERNAME) or not auth_body.get(gc.PASSWORD):
         response = make_general_response(FAIL, "Authorization Missing")
         return response, UNAUTHORIZED
 
@@ -93,7 +94,9 @@ def login():
     #     response = make_general_response(PARAMETER_MISSING, missing + " is missing")
     #     return response, BAD_REQUEST
 
-    query = f"Select * from admin where username = '{auth_body.get(USERNAME)}' and password = '{auth_body.get(PASSWORD)}' "
+    query = f"Select * from {ADMIN} where {USERNAME} = '{auth_body.get(gc.USERNAME)}' and" \
+            f" {PASSWORD} = '{auth_body.get(gc.PASSWORD)}' "
+
     r = select_query(query)
     result = r.fetchall()
     if len(result) != 0:
@@ -101,10 +104,11 @@ def login():
             response = make_general_response(SUCCESS, "SUCCESS")
             token = jwt.encode(
                 {
-                    "username": auth_body.get(USERNAME),
-                    "password": sha256(auth_body.get(PASSWORD).encode(ASCII)).hexdigest()
+                    USERNAME: auth_body.get(gc.USERNAME),
+                    PASSWORD: sha256(auth_body.get(gc.PASSWORD).encode(gc.ASCII)).hexdigest()
+
                 }, app.config[SECRET_KEY])
-            response[TOKEN] = token
+            response[gc.TOKEN] = token
 
             return response, OK
         else:
@@ -134,35 +138,35 @@ def admin_dashboard():
         response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
         return response, BAD_REQUEST
 
-    elif not query_params.get(ADMIN):
+    elif not query_params.get(gc.ADMIN):
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    username = query_params.get(ADMIN)
-    query = f"Select username from admin where username = '{username}' "
+    username = query_params.get(gc.ADMIN)
+    query = f"Select {USERNAME} from {ADMIN} where {USERNAME} = '{username}' "
     r = select_query(query)
     result = r.fetchall()
     if len(result) == 0:
         response = make_general_response(ADMIN_NOT_FOUND, "Admin not found")
         return response, OK
 
-    query = "select count(id) from madrassa"
+    query = f"select count({ID}) from {MADRASSA}"
     madrassa_count = first_row_first_col(query)
 
-    query = "select count(id) from course"
+    query = f"select count({ID}) from {COURSE}"
     course_count = first_row_first_col(query)
 
-    query = "select count(id) from shift"
+    query = f"select count({ID}) from {SHIFT}"
     shift_count = first_row_first_col(query)
 
-    query = "select count(id) from enrollment where role_id = 0"
+    query = f"select count({ID}) from {ENROLLMENT} where {ROLE_ID} = 0"
     teacher_count = first_row_first_col(query)
 
-    query = "select count(id) from enrollment where role_id = 1"
+    query = f"select count({ID}) from {ENROLLMENT} where {ROLE_ID} = 1"
     student_count = first_row_first_col(query)
 
     response = make_general_response(SUCCESS, "Success")
-    response[DATA] = {
+    response[gc.DATA] = {
         'totalStudents': student_count,
         'totalTeachers': teacher_count,
         'totalShifts': shift_count,
@@ -175,18 +179,18 @@ def admin_dashboard():
 @app.route(GET_ROLES, methods=[GET])
 @authorize_request
 def get_roles():
-    query = "select * from role"
+    query = f"select * from {ROLE}"
     r = select_query(query)
     result = r.fetchall()
     data = []
     for i in result:
         data.append({
-            ID: i[0],
-            NAME: i[1]
+            gc.ID: i[0],
+            gc.NAME: i[1]
         })
 
     response = make_general_response(SUCCESS, "Success")
-    response[DATA] = data
+    response[gc.DATA] = data
     return response, OK
 
 
@@ -194,24 +198,24 @@ def get_roles():
 @authorize_request
 def add_roles():
     request_body = request.get_json()
-    missing = verify_param([NAME], request_body)
+    missing = verify_param([gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
     index = select_max(ROLE) + 1
 
-    query = f"insert into role(id,role_name) values({index},'{request_body[NAME]}')"
+    query = f"insert into {ROLE}({ID}, {ROLE_NAME}) values({index},'{request_body[gc.NAME]}')"
     r = insert_query(query)
     if r:
-        query = f"select * from role where id = {index}"
+        query = f"select * from {ROLE} where id = {index}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -223,23 +227,23 @@ def add_roles():
 @authorize_request
 def update_roles():
     request_body = request.get_json()
-    missing = verify_param([ID, NAME], request_body)
+    missing = verify_param([gc.ID, gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
-    query = f"update role set role_name = '{request_body[NAME]}' where id = {request_body[ID]}"
+    query = f"update {ROLE} set {ROLE_NAME} = '{request_body[gc.NAME]}' where id = {request_body[gc.ID]}"
     r = insert_query(query)
     if r:
-        query = f"select * from role where id = {request_body[ID]}"
+        query = f"select * from {ROLE} where {ID} = {request_body[gc.ID]}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -256,44 +260,44 @@ def delete_roles():
         response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
         return response, BAD_REQUEST
 
-    elif len(query_params) > 2:
+    elif len(query_params) > 1:
         response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
         return response, BAD_REQUEST
 
-    elif not query_params.get(ID):
+    elif not query_params.get(gc.ID):
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    query = f'delete from role where id={query_params[ID]}'
+    query = f'delete from {ROLE} where {ID} ={query_params[gc.ID]}'
     r = insert_query(query)
     if r:
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, CREATED
 
     else:
         response = make_general_response(ROLE_NOT_FOUND, "RoleID not found")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, OK
 
 
 @app.route(GET_SHIFTS, methods=[GET])
 @authorize_request
 def get_shifts():
-    query = "select * from shift"
+    query = f"select * from {SHIFT}"
     r = select_query(query)
     result = r.fetchall()
     data = []
     for i in result:
         data.append({
             ID: i[0],
-            NAME: i[1],
-            START_TIME: str(i[2]),
-            END_TIME: str(i[3])
+            gc.NAME: i[1],
+            gc.START_TIME: str(i[2]),
+            gc.END_TIME: str(i[3])
         })
 
     response = make_general_response(SUCCESS, "Success")
-    response[DATA] = data
+    response[gc.DATA] = data
     return response, OK
 
 
@@ -301,27 +305,27 @@ def get_shifts():
 @authorize_request
 def add_shifts():
     request_body = request.get_json()
-    missing = verify_param([NAME, START_TIME, END_TIME], request_body)
+    missing = verify_param([gc.NAME, gc.START_TIME, gc.END_TIME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
     index = select_max(SHIFT) + 1
 
     query = f"insert into shift(id,shift_name,start_time,end_time) " \
-            f"values({index},'{request_body[NAME]}','{request_body[START_TIME]}','{request_body[END_TIME]}')"
+            f"values({index},'{request_body[gc.NAME]}','{request_body[gc.START_TIME]}','{request_body[gc.END_TIME]}')"
     r = insert_query(query)
     if r:
-        query = f"select * from shift where id = {index}"
+        query = f"select * from {SHIFT} where {ID} = {index}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1],
-            START_TIME: str(result[0][2]),
-            END_TIME: str(result[0][3]),
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1],
+            gc.START_TIME: str(result[0][2]),
+            gc.END_TIME: str(result[0][3]),
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -335,27 +339,27 @@ def add_shifts():
 @authorize_request
 def update_shifts():
     request_body = request.get_json()
-    missing = verify_param([ID, NAME, START_TIME, END_TIME], request_body)
+    missing = verify_param([gc.ID, gc.NAME, gc.START_TIME, gc.END_TIME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
-    query = f"update shift" \
-            f" set shift_name = '{request_body[NAME]}' , start_time = '{request_body[START_TIME]}', " \
-            f"end_time= '{request_body[END_TIME]}' where id = {request_body[ID]}"
+    query = f"update {SHIFT}" \
+            f" set {SHIFT_NAME} = '{request_body[gc.NAME]}' , {START_TIME} = '{request_body[gc.START_TIME]}', " \
+            f"{END_TIME}= '{request_body[gc.END_TIME]}' where {ID} = {request_body[gc.ID]}"
     r = insert_query(query)
     if r:
-        query = f"select * from shift where id = {request_body[ID]}"
+        query = f"select * from {SHIFT} where {ID} = {request_body[gc.ID]}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1],
-            START_TIME: str(result[0][2]),
-            END_TIME: str(result[0][3]),
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1],
+            gc.START_TIME: str(result[0][2]),
+            gc.END_TIME: str(result[0][3]),
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -373,7 +377,7 @@ def delete_shifts():
         response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
         return response, BAD_REQUEST
 
-    elif len(query_params) > 2:
+    elif len(query_params) > 1:
         response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
         return response, BAD_REQUEST
 
@@ -381,16 +385,16 @@ def delete_shifts():
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    query = f'delete from shift where id={query_params[ID]}'
+    query = f'delete from {SHIFT} where {ID}={query_params[gc.ID]}'
     r = insert_query(query)
     if r:
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, CREATED
 
     else:
         response = make_general_response(SHIFT_NOT_FOUND, "ShiftID not found")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, OK
 
     # return flask.jsonify({flask.request.base_url: flask.request.method})
@@ -399,18 +403,18 @@ def delete_shifts():
 @app.route(GET_COURSES, methods=[GET])
 @authorize_request
 def get_course():
-    query = "select * from course"
+    query = f"select * from {COURSE}"
     r = select_query(query)
     result = r.fetchall()
     data = []
     for i in result:
         data.append({
-            ID: i[0],
-            NAME: i[1]
+            gc.ID: i[0],
+            gc.NAME: i[1]
         })
 
     response = make_general_response(SUCCESS, "Success")
-    response[DATA] = data
+    response[gc.DATA] = data
     return response, OK
 
 
@@ -418,24 +422,24 @@ def get_course():
 @authorize_request
 def add_courses():
     request_body = request.get_json()
-    missing = verify_param([NAME], request_body)
+    missing = verify_param([gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
     index = select_max(COURSE) + 1
 
-    query = f"insert into course(id,course_name) values({index},'{request_body[NAME]}')"
+    query = f"insert into {COURSE}({ID},{COURSE_NAME}) values({index},'{request_body[gc.NAME]}')"
     r = insert_query(query)
     if r:
-        query = f"select * from course where id = {index}"
+        query = f"select * from {COURSE} where {ID} = {index}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -447,23 +451,24 @@ def add_courses():
 @authorize_request
 def update_courses():
     request_body = request.get_json()
-    missing = verify_param([ID, NAME], request_body)
+    missing = verify_param([gc.ID, gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
-    query = f"update course set course_name = '{request_body[NAME]}' where id = {request_body[ID]}"
+    query = f"update {COURSE} set {COURSE_NAME} = '{request_body[gc.NAME]}' where {ID} = {request_body[gc.ID]}"
     r = insert_query(query)
     if r:
-        query = f"select * from course where id = {request_body[ID]}"
+        query = f"select * from {COURSE} where {ID} = {request_body[ID]}"
+
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -480,7 +485,7 @@ def delete_courses():
         response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
         return response, BAD_REQUEST
 
-    elif len(query_params) > 2:
+    elif len(query_params) > 1:
         response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
         return response, BAD_REQUEST
 
@@ -488,34 +493,34 @@ def delete_courses():
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    query = f'delete from course where id={query_params[ID]}'
+    query = f'delete from {COURSE} where {ID} = {query_params[gc.ID]}'
     r = insert_query(query)
     if r:
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, CREATED
 
     else:
         response = make_general_response(COURSE_NOT_FOUND, "CourseID not found")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, OK
 
 
 @app.route(GET_MADRASSAS, methods=[GET])
 @authorize_request
 def get_madrassas():
-    query = "select * from madrassa"
+    query = f"select * from {MADRASSA}"
     r = select_query(query)
     result = r.fetchall()
     data = []
     for i in result:
         data.append({
-            ID: i[0],
-            NAME: i[1]
+            gc.ID: i[0],
+            gc.NAME: i[1]
         })
 
     response = make_general_response(SUCCESS, "Success")
-    response[DATA] = data
+    response[gc.DATA] = data
     return response, OK
 
 
@@ -523,24 +528,24 @@ def get_madrassas():
 @authorize_request
 def add_madrassas():
     request_body = request.get_json()
-    missing = verify_param([NAME], request_body)
+    missing = verify_param([gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
     index = select_max(MADRASSA) + 1
 
-    query = f"insert into madrassa(id,madrassa_name) values({index},'{request_body[NAME]}')"
+    query = f"insert into {MADRASSA}({ID},{MADRASSA_NAME}) values({index},'{request_body[gc.NAME]}')"
     r = insert_query(query)
     if r:
-        query = f"select * from madrassa where id = {index}"
+        query = f"select * from {MADRASSA} where {ID} = {index}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -552,23 +557,23 @@ def add_madrassas():
 @authorize_request
 def update_madrassas():
     request_body = request.get_json()
-    missing = verify_param([ID, NAME], request_body)
+    missing = verify_param([gc.ID, gc.NAME], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
-    query = f"update madrassa set madrassa_name = '{request_body[NAME]}' where id = {request_body[ID]}"
+    query = f"update {MADRASSA} set {MADRASSA_NAME} = '{request_body[gc.NAME]}' where id = {request_body[gc.ID]}"
     r = insert_query(query)
     if r:
-        query = f"select * from madrassa where id = {request_body[ID]}"
+        query = f"select * from {MADRASSA} where {ID} = {request_body[gc.ID]}"
         r = select_query(query)
         result = r.fetchall()
         data = {
-            ID: result[0][0],
-            NAME: result[0][1]
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1]
         }
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DATA] = data
+        response[gc.DATA] = data
         return response, CREATED
 
     else:
@@ -585,7 +590,7 @@ def delete_madrassas():
         response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
         return response, BAD_REQUEST
 
-    elif len(query_params) > 2:
+    elif len(query_params) > 1:
         response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
         return response, BAD_REQUEST
 
@@ -593,16 +598,16 @@ def delete_madrassas():
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    query = f'delete from madrassa where id={query_params[ID]}'
+    query = f'delete from {MADRASSA} where {ID}={query_params[gc.ID]}'
     r = insert_query(query)
     if r:
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, CREATED
 
     else:
         response = make_general_response(MADRASSA_NOT_FOUND, "MadrassaID not found")
-        response[DELETED] = r
+        response[gc.DELETED] = r
         return response, OK
 
 
