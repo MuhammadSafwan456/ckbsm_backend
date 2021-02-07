@@ -22,17 +22,16 @@ def authorize_request(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         token = None
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
+        if X_ACCESS_TOKEN in request.headers:
+            token = request.headers[X_ACCESS_TOKEN]
 
         if not token:
-            response = make_general_response(MISSING_TOKEN, 'token is misiing')
+            response = make_general_response(MISSING_TOKEN, 'token is missing')
             return response, UNAUTHORIZED
 
         try:
-            algorithm = "HS256"
+            algorithm = SHA256
             data = jwt.decode(token, app.config[SECRET_KEY], algorithms=[algorithm])
-            print('data',data)
             query = f"Select password from admin where username = '{data.get(USERNAME)}'"
             r = select_query(query)
             result = r.fetchall()
@@ -73,9 +72,9 @@ def make_missing_parameter_response(parameter):
     return response
 
 
-def verify_param(required, recieved):
+def verify_param(required, received):
     for req in required:
-        if req in recieved:
+        if req in received:
             pass
         else:
             return req
@@ -85,8 +84,6 @@ def verify_param(required, recieved):
 @app.route(LOGIN, methods=[GET])
 def login():
     auth_body = request.authorization
-
-    print("__________--", auth_body)
     if not auth_body or not auth_body.get(USERNAME) or not auth_body.get(PASSWORD):
         response = make_general_response(FAIL, "Authorization Missing")
         return response, UNAUTHORIZED
@@ -107,7 +104,6 @@ def login():
                     "username": auth_body.get(USERNAME),
                     "password": sha256(auth_body.get(PASSWORD).encode(ASCII)).hexdigest()
                 }, app.config[SECRET_KEY])
-            print("______TOKEN", token)
             response[TOKEN] = token
 
             return response, OK
@@ -130,7 +126,6 @@ def admin_dashboard():
 
     query_params = request.args
     length_query_param = len(query_params)
-    # admin = request.args.get(ADMIN)
     if length_query_param == 0:
         response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
         return response, BAD_REQUEST
