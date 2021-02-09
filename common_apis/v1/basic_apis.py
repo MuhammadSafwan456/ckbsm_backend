@@ -612,6 +612,110 @@ def delete_madrassas():
         return response, OK
 
 
+@app.route(GET_GENDER, methods=[GET])
+@authorize_request
+def get_gender():
+    query = f"select * from {GENDER}"
+    r = select_query(query)
+    result = r.fetchall()
+    data = []
+    for i in result:
+        data.append({
+            gc.ID: i[0],
+            gc.GENDER: i[1]
+        })
+    response = make_general_response(SUCCESS, "Success")
+    response[gc.DATA] = data
+    return response, OK
+
+
+@app.route(ADD_GENDER, methods=[POST])
+@authorize_request
+def add_gender():
+    request_body = request.get_json()
+    missing = verify_param([gc.GENDER], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+    index = select_max(GENDER) + 1
+
+    query = f"insert into {GENDER}({ID},{GENDER}) values({index},'{request_body[gc.GENDER]}')"
+    r = insert_query(query)
+    if r:
+        query = f"select * from {GENDER} where {ID} = {index}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            gc.ID: result[0][0],
+            gc.GENDER: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[gc.DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, OK
+
+
+@app.route(UPDATE_GENDER, methods=[PUT])
+@authorize_request
+def update_gender():
+    request_body = request.get_json()
+    missing = verify_param([gc.ID, gc.GENDER], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    query = f"update {GENDER} set {GENDER} = '{request_body[gc.GENDER]}' where id = {request_body[gc.ID]}"
+    r = insert_query(query)
+    if r:
+        query = f"select * from {GENDER} where {ID} = {request_body[gc.ID]}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            gc.ID: result[0][0],
+            gc.GENDER: result[0][1]
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[gc.DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(GENDER_NOT_FOUND, "GenderID not found")
+        return response, OK
+
+
+@app.route(DELETE_GENDER, methods=[DELETE])
+@authorize_request
+def delete_gender():
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 1:
+        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(ID):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    query = f'delete from {GENDER} where {ID}={query_params[gc.ID]}'
+    r = insert_query(query)
+    if r:
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[gc.DELETED] = r
+        return response, CREATED
+
+    else:
+        response = make_general_response(GENDER_NOT_FOUND, "GenderID not found")
+        response[gc.DELETED] = r
+        return response, OK
+
+
 @app.route(SET_MADRASSA_DETAILS, methods=[POST])
 @authorize_request
 def set_madrassa_details():
@@ -743,12 +847,18 @@ def get_madrassa_details():
 @app.route(ADD_USER, methods=[POST])
 @authorize_request
 def add_user():
+
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @app.route(GET_USERS, methods=[GET])
 @authorize_request
 def get_users():
+    request_body = request.get_json()
+    missing = verify_param([gc.NAME, gc.FATH, gc.COURSE_ID], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 

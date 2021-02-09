@@ -15,3 +15,9 @@ SHA256 = 'HS256'
 MADRASSA_ID = 'madrassaId'
 SHIFT_ID = 'shiftId'
 COURSE_ID = 'courseId'
+FATHER_NAME = 'fatherName'
+GENDER = 'gender'
+# CNIC
+# EMAIL
+# MOTHER_TONGUE
+# CONTACT
