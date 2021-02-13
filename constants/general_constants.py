@@ -17,7 +17,12 @@ SHIFT_ID = 'shiftId'
 COURSE_ID = 'courseId'
 FATHER_NAME = 'fatherName'
 GENDER = 'gender'
-# CNIC
-# EMAIL
-# MOTHER_TONGUE
-# CONTACT
+CNIC = 'cnic'
+EMAIL = 'email'
+MOTHER_TONGUE = 'motherTongue'
+CONTACT = 'contact'
+GENDER_ID = 'genderId'
+GUARDIAN_NAME = 'guardianName'
+GUARDIAN_CONTACT = 'guardianContact'
+DATE_OF_BIRTH = 'dateOfBirth'
+AGE = 'age'

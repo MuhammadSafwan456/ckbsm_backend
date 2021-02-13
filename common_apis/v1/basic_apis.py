@@ -82,6 +82,10 @@ def verify_param(required, received):
             return req
     return None
 
+def validate_cnic(cnic):
+    ^ [0 - 9]{5} - [0 - 9]{7} - [0 - 9]$
+
+
 
 @app.route(LOGIN, methods=[GET])
 def login():
@@ -847,6 +851,15 @@ def get_madrassa_details():
 @app.route(ADD_USER, methods=[POST])
 @authorize_request
 def add_user():
+    request_body = request.get_json()
+    missing = verify_param([gc.NAME, gc.FATHER_NAME, gc.CNIC, gc.EMAIL, gc.MOTHER_TONGUE, gc.CONTACT, gc.GENDER_ID,
+                            gc.GUARDIAN_NAME, gc.GUARDIAN_CONTACT, gc.DATE_OF_BIRTH, gc.AGE], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    if not validate_cnic(request_body.get(gc.CNIC)):
+
 
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
@@ -854,11 +867,6 @@ def add_user():
 @app.route(GET_USERS, methods=[GET])
 @authorize_request
 def get_users():
-    request_body = request.get_json()
-    missing = verify_param([gc.NAME, gc.FATH, gc.COURSE_ID], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
     return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
