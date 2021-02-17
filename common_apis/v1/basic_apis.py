@@ -5,6 +5,7 @@ from codes.status_codes import *
 from codes.response_codes import *
 import constants.general_constants as gc
 from config.app_config import JWT_SECRET_KEY
+from config.db_column_to_response import mapper
 from constants.column_names import *
 from flask import request
 from database_layer.database import select_query, insert_query
@@ -13,7 +14,7 @@ from functools import wraps
 import flask
 import jwt
 import re
-# import json
+import json
 import datetime
 
 app = flask.Flask(__name__)
@@ -38,7 +39,7 @@ def authorize_request(f):
         query = f"Select {PASSWORD} from {ADMIN} where {USERNAME} = '{data.get(gc.USERNAME)}'"
         r = select_query(query)
         result = r.fetchall()
-        password = result[0][0]
+        password = result[0][PASSWORD]
         hashed_password = sha256(password.encode(gc.ASCII)).hexdigest()
         if hashed_password == data.get(gc.PASSWORD):
             return f(*args, **kwargs)
@@ -51,11 +52,12 @@ def authorize_request(f):
 
 
 def select_max(table):
-    query = f'select max({ID}) from {table}'
+    query = f'select max({ID}) as {ID} from {table}'
     r = select_query(query)
     result = r.fetchall()
-    if result[0][0]:
-        return result[0][0]
+    print("_______________________________",result)
+    if result[0].get(ID):
+        return result[0].get(ID)
     return 0
 
 
@@ -131,6 +133,13 @@ def validate_date(date):
     return True
 
 
+def map_response(original_dict, mapper):
+    data = {}
+    for key in original_dict:
+        data[mapper[key]] = original_dict[key]
+    return data
+
+
 @app.route(LOGIN, methods=[GET])
 def login():
     auth_body = request.authorization
@@ -149,7 +158,7 @@ def login():
     r = select_query(query)
     result = r.fetchall()
     if len(result) != 0:
-        if result[0][0] == auth_body.get(USERNAME) and result[0][1] == auth_body.get(PASSWORD):
+        if result[0][USERNAME] == auth_body.get(USERNAME) and result[0][PASSWORD] == auth_body.get(PASSWORD):
             response = make_general_response(SUCCESS, "SUCCESS")
             token = jwt.encode(
                 {
@@ -174,7 +183,7 @@ def admin_dashboard():
     def first_row_first_col(query):
         res = select_query(query)
         res = res.fetchall()
-        count = res[0][0]
+        count = res[0][ID]
         return count
 
     query_params = request.args
@@ -199,19 +208,19 @@ def admin_dashboard():
         response = make_general_response(ADMIN_NOT_FOUND, "Admin not found")
         return response, OK
 
-    query = f"select count({ID}) from {MADRASSA}"
+    query = f"select count({ID}) as {ID} from {MADRASSA}"
     madrassa_count = first_row_first_col(query)
 
-    query = f"select count({ID}) from {COURSE}"
+    query = f"select count({ID}) as {ID} from {COURSE}"
     course_count = first_row_first_col(query)
 
-    query = f"select count({ID}) from {SHIFT}"
+    query = f"select count({ID}) as {ID} from {SHIFT}"
     shift_count = first_row_first_col(query)
 
-    query = f"select count({ID}) from {ENROLLMENT} where {ROLE_ID} = 0"
+    query = f"select count({ID}) as {ID} from {ENROLLMENT} where {ROLE_ID} = 0"
     teacher_count = first_row_first_col(query)
 
-    query = f"select count({ID}) from {ENROLLMENT} where {ROLE_ID} = 1"
+    query = f"select count({ID}) as {ID} from {ENROLLMENT} where {ROLE_ID} = 1"
     student_count = first_row_first_col(query)
 
     response = make_general_response(SUCCESS, "Success")
@@ -233,11 +242,8 @@ def get_roles():
     result = r.fetchall()
     data = []
     for i in result:
-        data.append({
-            gc.ID: i[0],
-            gc.NAME: i[1]
-        })
-
+        mapped_data = map_response(i, mapper)
+        data.append(mapped_data)
     response = make_general_response(SUCCESS, "Success")
     response[gc.DATA] = data
     return response, OK
@@ -259,10 +265,11 @@ def add_roles():
         query = f"select * from {ROLE} where id = {index}"
         r = select_query(query)
         result = r.fetchall()
-        data = {
-            gc.ID: result[0][0],
-            gc.NAME: result[0][1]
-        }
+        # data = {
+        #     gc.ID: result[0][0],
+        #     gc.NAME: result[0][1]
+        # }
+        data = map_response(result[0], mapper)
         response = make_general_response(SUCCESS, "SUCCESS")
         response[gc.DATA] = data
         return response, CREATED
@@ -287,16 +294,17 @@ def update_roles():
         query = f"select * from {ROLE} where {ID} = {request_body[gc.ID]}"
         r = select_query(query)
         result = r.fetchall()
-        data = {
-            gc.ID: result[0][0],
-            gc.NAME: result[0][1]
-        }
+        data = map_response(result[0],mapper)
+        # data = {
+        #     gc.ID: result[0][0],
+        #     gc.NAME: result[0][1]
+        # }
         response = make_general_response(SUCCESS, "SUCCESS")
         response[gc.DATA] = data
         return response, CREATED
 
     else:
-        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found")
+        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found or Already Updated")
         return response, OK
 
 
