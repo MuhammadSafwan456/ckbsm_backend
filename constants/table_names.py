@@ -10,6 +10,7 @@ SHIFT = 'shift'
 SHIFT_COURSE = 'shift_course'
 SHIFT_MADRASSA = 'shift_madrassa'
 USER = 'user'
+MADRASSA_DETAILS = 'madrassa_details'
 
 
 

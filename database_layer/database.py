@@ -34,15 +34,18 @@ def select_query(query):
     my_cursor.execute(query)
     return my_cursor
 
+
 def insert_query(query):
     """
     execute the query & return the cursor
     """
     if my_db == NO_CONNECTION:
         make_connection()
-
-    my_cursor.execute(query)
-    my_db.commit()
+    try:
+        my_cursor.execute(query)
+        my_db.commit()
+    except:
+        return False
     if my_cursor.rowcount > 0:
         return True
     return False

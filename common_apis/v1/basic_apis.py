@@ -12,7 +12,8 @@ from hashlib import sha256
 from functools import wraps
 import flask
 import jwt
-import json
+import re
+# import json
 import datetime
 
 app = flask.Flask(__name__)
@@ -82,9 +83,52 @@ def verify_param(required, received):
             return req
     return None
 
-def validate_cnic(cnic):
-    ^ [0 - 9]{5} - [0 - 9]{7} - [0 - 9]$
 
+def validate_cnic(cnic):
+    result = re.match("^[0-9]{5}-[0-9]{7}-[0-9]$", cnic)
+    if result is None:
+        return False
+    return True
+
+
+def validate_time(time):
+    try:
+        if not len(time) == 4:
+            return False, None
+        hour = time[0:2]
+        mint = time[2:4]
+        if int(hour) > 23 or int(mint) > 60:
+            return False, None
+    except:
+        return False, None
+    return True, time+"00"
+
+
+def validate_email(email):
+    result = re.match("^.+[ @].+[.].+", email)
+    if result is None:
+        return False
+    return True
+
+
+def validate_contact(number):
+    result = re.match("^03[0-4][0-9]-[0-9]{7}", number)
+    if result is None:
+        return False
+    return True
+
+
+def validate_date(date):
+    if not len(date) == 8:
+        return False
+    yy = date[0:4]
+    mm = date[4:6]
+    dd = date[6:8]
+    try:
+        datetime.datetime(int(yy), int(mm), int(dd))
+    except ValueError:
+        return False
+    return True
 
 
 @app.route(LOGIN, methods=[GET])
@@ -314,10 +358,21 @@ def add_shifts():
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
+
+    flag, start_time = validate_time(request_body[gc.START_TIME])
+    if not flag:
+        response = make_general_response(INVALID_PARAMETER, "Invalid Start Time format allowed is hhmm")
+        return response, BAD_REQUEST
+
+    flag, end_time = validate_time(request_body[gc.END_TIME])
+    if not flag:
+        response = make_general_response(INVALID_PARAMETER, "Invalid End Time format allowed is hhmm")
+        return response, BAD_REQUEST
+
     index = select_max(SHIFT) + 1
 
     query = f"insert into shift(id,shift_name,start_time,end_time) " \
-            f"values({index},'{request_body[gc.NAME]}','{request_body[gc.START_TIME]}','{request_body[gc.END_TIME]}')"
+            f"values({index},'{request_body[gc.NAME]}','{start_time}','{end_time}')"
     r = insert_query(query)
     if r:
         query = f"select * from {SHIFT} where {ID} = {index}"
@@ -349,9 +404,20 @@ def update_shifts():
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
+    flag, start_time = validate_time(request_body[gc.START_TIME])
+    if not flag:
+        response = make_general_response(INVALID_PARAMETER, "Invalid Start Time format allowed is hhmm")
+        return response, BAD_REQUEST
+
+    flag, end_time = validate_time(request_body[gc.END_TIME])
+    if not flag:
+        response = make_general_response(INVALID_PARAMETER, "Invalid End Time format allowed is hhmm")
+        return response, BAD_REQUEST
+
+
     query = f"update {SHIFT}" \
-            f" set {SHIFT_NAME} = '{request_body[gc.NAME]}' , {START_TIME} = '{request_body[gc.START_TIME]}', " \
-            f"{END_TIME}= '{request_body[gc.END_TIME]}' where {ID} = {request_body[gc.ID]}"
+            f" set {SHIFT_NAME} = '{request_body[gc.NAME]}' , {START_TIME} = '{start_time}', " \
+            f"{END_TIME}= '{end_time}' where {ID} = {request_body[gc.ID]}"
     r = insert_query(query)
     if r:
         query = f"select * from {SHIFT} where {ID} = {request_body[gc.ID]}"
@@ -555,7 +621,7 @@ def add_madrassas():
 
     else:
         response = make_general_response(FAIL, "FAIL")
-        return response, OK
+        return response, BAD_REQUEST
 
 
 @app.route(UPDATE_MADRASSAS, methods=[PUT])
@@ -723,61 +789,26 @@ def delete_gender():
 @app.route(SET_MADRASSA_DETAILS, methods=[POST])
 @authorize_request
 def set_madrassa_details():
-    def first_row_first_col(query):
-        res = select_query(query)
-        res = res.fetchall()
-        count = res[0][0]
-        return count
-
     request_body = request.get_json()
     missing = verify_param([gc.MADRASSA_ID, gc.SHIFT_ID, gc.COURSE_ID], request_body)
     if missing:
         response = make_general_response(PARAMETER_MISSING, missing + " is missing")
         return response, BAD_REQUEST
 
-    madrassa_id = request_body.get(gc.MADRASSA_ID)
-    shift_id = request_body.get(gc.SHIFT_ID)
-    course_id = request_body.get(gc.COURSE_ID)
+    index = select_max(MADRASSA_DETAILS) + 1
 
-    query = f"select count({ID}) from {MADRASSA} where {ID} = {madrassa_id}"
-    m_count = first_row_first_col(query)
+    shift_id = request_body[gc.SHIFT_ID]
+    course_id = request_body[gc.COURSE_ID]
+    madrassa_id = request_body[gc.MADRASSA_ID]
+    query = f"insert into {MADRASSA_DETAILS}({ID}, {SHIFT_ID}, {COURSE_ID}, {MADRASSA_ID})" \
+            f"values({index}, {shift_id}, {course_id}, {madrassa_id})"
 
-    query = f"select count({ID}) from {SHIFT}  where {ID} = {shift_id}"
-    s_count = first_row_first_col(query)
-
-    query = f"select count({ID}) from {COURSE} where {ID} = {course_id}"
-    c_count = first_row_first_col(query)
-
-    if not m_count:
-        response = make_general_response(MADRASSA_NOT_FOUND, "MadrassaID not found")
-        return response, OK
-
-    if not s_count:
-        response = make_general_response(SHIFT_NOT_FOUND, "ShiftID not found")
-        return response, OK
-
-    if not c_count:
-        response = make_general_response(COURSE_NOT_FOUND, "CourseID not found")
-        return response, OK
-
-    query = f"select count({ID}) from {SHIFT_MADRASSA} where {MADRASSA_ID} = {madrassa_id} and {SHIFT_ID} = {shift_id}"
-    sm_count = first_row_first_col(query)
-
-    query = f"select count({ID}) from {SHIFT_COURSE} where {COURSE_ID} = {course_id} and {SHIFT_ID} = {shift_id}"
-    sc_count = first_row_first_col(query)
-
-    r = False
-    if not sm_count:
-        index = select_max(SHIFT_MADRASSA) + 1
-        query = f"insert into {SHIFT_MADRASSA}({ID},{SHIFT_ID},{MADRASSA_ID}) values({index},{shift_id},{madrassa_id})"
-        r = insert_query(query)
-
-    if r or sm_count:
+    r = insert_query(query)
+    if r:
         query = f"select distinct {SHIFT_ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
-                f"from {SHIFT_MADRASSA} inner join {SHIFT} on " \
-                f"{SHIFT_MADRASSA}.{SHIFT_ID} = {SHIFT}.{ID} " \
+                f"from {MADRASSA_DETAILS} inner join {SHIFT} on " \
+                f"{MADRASSA_DETAILS}.{SHIFT_ID} = {SHIFT}.{ID} " \
                 f"where {SHIFT_ID} = {shift_id}"
-
         r = select_query(query)
         result = r.fetchall()
         shift_object = {
@@ -788,8 +819,8 @@ def set_madrassa_details():
         }
 
         query = f"select distinct {MADRASSA_ID},{MADRASSA_NAME} from " \
-                f"{SHIFT_MADRASSA} inner join {MADRASSA} " \
-                f"on {SHIFT_MADRASSA}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
+                f"{MADRASSA_DETAILS} inner join {MADRASSA} " \
+                f"on {MADRASSA_DETAILS}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
                 f"where {MADRASSA_ID} = {madrassa_id}"
         r = select_query(query)
         result = r.fetchall()
@@ -798,31 +829,9 @@ def set_madrassa_details():
             gc.NAME: result[0][1]
         }
 
-
-    r = False
-    if not sc_count:
-        index = select_max(SHIFT_COURSE) + 1
-        query = f"insert into {SHIFT_COURSE}({ID},{SHIFT_ID},{COURSE_ID}) values({index},{shift_id},{course_id})"
-        r = insert_query(query)
-
-    if r or sc_count:
-        query = f"select distinct {SHIFT_ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
-                f"from {SHIFT_COURSE} inner join {SHIFT} on " \
-                f"{SHIFT_COURSE}.{SHIFT_ID} = {SHIFT}.{ID} " \
-                f"where {SHIFT_ID} = {shift_id}"
-
-        r = select_query(query)
-        result = r.fetchall()
-        shift_object = {
-            gc.ID: result[0][0],
-            gc.NAME: result[0][1],
-            gc.START_TIME: str(result[0][2]),
-            gc.END_TIME: str(result[0][3])
-        }
-
         query = f"select distinct {COURSE_ID},{COURSE_NAME} from " \
-                f"{SHIFT_COURSE} inner join {COURSE} " \
-                f"on {SHIFT_COURSE}.{COURSE_ID} = {COURSE}.{ID} " \
+                    f"{MADRASSA_DETAILS} inner join {COURSE} " \
+                f"on {MADRASSA_DETAILS}.{COURSE_ID} = {COURSE}.{ID} " \
                 f"where {COURSE_ID} = {course_id}"
         r = select_query(query)
         result = r.fetchall()
@@ -830,22 +839,202 @@ def set_madrassa_details():
             gc.ID: result[0][0],
             gc.NAME: result[0][1]
         }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[gc.DATA] = {}
+        response[gc.DATA][MADRASSA] = madrassa_object
+        response[gc.DATA][SHIFT] = shift_object
+        response[gc.DATA][COURSE] = course_object
+        return response, CREATED
 
-    # print('madrassa_object1',madrassa_object)
-    # print('shift_object1',shift_object)
-    # print('shift_object2',shift_object)
-    # print('course_object1', course_object)
-    response = make_general_response(SUCCESS,"Success")
-    response[MADRASSA] = madrassa_object
-    response[SHIFT] = shift_object
-    response[COURSE] = course_object
-    return response, OK
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, OK
+# def first_row_first_col(query):
+    #     res = select_query(query)
+    #     res = res.fetchall()
+    #     count = res[0][0]
+    #     return count
+    #
+    # request_body = request.get_json()
+    # missing = verify_param([gc.MADRASSA_ID, gc.SHIFT_ID, gc.COURSE_ID], request_body)
+    # if missing:
+    #     response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+    #     return response, BAD_REQUEST
+    #
+    # madrassa_id = request_body.get(gc.MADRASSA_ID)
+    # shift_id = request_body.get(gc.SHIFT_ID)
+    # course_id = request_body.get(gc.COURSE_ID)
+    #
+    # query = f"select count({ID}) from {MADRASSA} where {ID} = {madrassa_id}"
+    # m_count = first_row_first_col(query)
+    #
+    # query = f"select count({ID}) from {SHIFT}  where {ID} = {shift_id}"
+    # s_count = first_row_first_col(query)
+    #
+    # query = f"select count({ID}) from {COURSE} where {ID} = {course_id}"
+    # c_count = first_row_first_col(query)
+    #
+    # if not m_count:
+    #     response = make_general_response(MADRASSA_NOT_FOUND, "MadrassaID not found")
+    #     return response, OK
+    #
+    # if not s_count:
+    #     response = make_general_response(SHIFT_NOT_FOUND, "ShiftID not found")
+    #     return response, OK
+    #
+    # if not c_count:
+    #     response = make_general_response(COURSE_NOT_FOUND, "CourseID not found")
+    #     return response, OK
+    #
+    # query = f"select count({ID}) from {SHIFT_MADRASSA} where {MADRASSA_ID} = {madrassa_id} and {SHIFT_ID} = {shift_id}"
+    # sm_count = first_row_first_col(query)
+    #
+    # query = f"select count({ID}) from {SHIFT_COURSE} where {COURSE_ID} = {course_id} and {SHIFT_ID} = {shift_id}"
+    # sc_count = first_row_first_col(query)
+    #
+    # r = False
+    # if not sm_count:
+    #     index = select_max(SHIFT_MADRASSA) + 1
+    #     query = f"insert into {SHIFT_MADRASSA}({ID},{SHIFT_ID},{MADRASSA_ID}) values({index},{shift_id},{madrassa_id})"
+    #     r = insert_query(query)
+    #
+    # if r or sm_count:
+    #     query = f"select distinct {SHIFT_ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
+    #             f"from {SHIFT_MADRASSA} inner join {SHIFT} on " \
+    #             f"{SHIFT_MADRASSA}.{SHIFT_ID} = {SHIFT}.{ID} " \
+    #             f"where {SHIFT_ID} = {shift_id}"
+    #
+    #     r = select_query(query)
+    #     result = r.fetchall()
+    #     shift_object = {
+    #         gc.ID: result[0][0],
+    #         gc.NAME: result[0][1],
+    #         gc.START_TIME: str(result[0][2]),
+    #         gc.END_TIME: str(result[0][3])
+    #     }
+    #
+    #     query = f"select distinct {MADRASSA_ID},{MADRASSA_NAME} from " \
+    #             f"{SHIFT_MADRASSA} inner join {MADRASSA} " \
+    #             f"on {SHIFT_MADRASSA}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
+    #             f"where {MADRASSA_ID} = {madrassa_id}"
+    #     r = select_query(query)
+    #     result = r.fetchall()
+    #     madrassa_object = {
+    #         gc.ID: result[0][0],
+    #         gc.NAME: result[0][1]
+    #     }
+    #
+    #
+    # r = False
+    # if not sc_count:
+    #     index = select_max(SHIFT_COURSE) + 1
+    #     query = f"insert into {SHIFT_COURSE}({ID},{SHIFT_ID},{COURSE_ID}) values({index},{shift_id},{course_id})"
+    #     r = insert_query(query)
+    #
+    # if r or sc_count:
+    #     query = f"select distinct {SHIFT_ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
+    #             f"from {SHIFT_COURSE} inner join {SHIFT} on " \
+    #             f"{SHIFT_COURSE}.{SHIFT_ID} = {SHIFT}.{ID} " \
+    #             f"where {SHIFT_ID} = {shift_id}"
+    #
+    #     r = select_query(query)
+    #     result = r.fetchall()
+    #     shift_object = {
+    #         gc.ID: result[0][0],
+    #         gc.NAME: result[0][1],
+    #         gc.START_TIME: str(result[0][2]),
+    #         gc.END_TIME: str(result[0][3])
+    #     }
+    #
+    #     query = f"select distinct {COURSE_ID},{COURSE_NAME} from " \
+    #             f"{SHIFT_COURSE} inner join {COURSE} " \
+    #             f"on {SHIFT_COURSE}.{COURSE_ID} = {COURSE}.{ID} " \
+    #             f"where {COURSE_ID} = {course_id}"
+    #     r = select_query(query)
+    #     result = r.fetchall()
+    #     course_object = {
+    #         gc.ID: result[0][0],
+    #         gc.NAME: result[0][1]
+    #     }
+    #
+    # # print('madrassa_object1',madrassa_object)
+    # # print('shift_object1',shift_object)
+    # # print('shift_object2',shift_object)
+    # # print('course_object1', course_object)
+    # response = make_general_response(SUCCESS,"Success")
+    # response[MADRASSA] = madrassa_object
+    # response[SHIFT] = shift_object
+    # response[COURSE] = course_object
+    # return response, OK
 
 
 @app.route(GET_MADRASSA_DETAILS, methods=[GET])
 @authorize_request
 def get_madrassa_details():
-    return flask.jsonify({flask.request.base_url: flask.request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif len(query_params) > 1:
+        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(gc.MADRASSA_ID):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    madrassa_detail_id = query_params.get(gc.MADRASSA_ID)
+
+    query = f"select * from {MADRASSA_DETAILS} where {gc.ID} = {madrassa_detail_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    shift_id = result[0][0]
+    madrassa_id = result[0][1]
+    course_id = result[0][2]
+
+    query = f"select distinct {SHIFT_ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
+            f"from {MADRASSA_DETAILS} inner join {SHIFT} on " \
+            f"{MADRASSA_DETAILS}.{SHIFT_ID} = {SHIFT}.{ID} " \
+            f"where {SHIFT_ID} = {shift_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    shift_object = {
+        gc.ID: result[0][0],
+        gc.NAME: result[0][1],
+        gc.START_TIME: str(result[0][2]),
+        gc.END_TIME: str(result[0][3])
+    }
+
+    query = f"select distinct {MADRASSA_ID},{MADRASSA_NAME} from " \
+            f"{MADRASSA_DETAILS} inner join {MADRASSA} " \
+            f"on {MADRASSA_DETAILS}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
+            f"where {MADRASSA_ID} = {madrassa_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    madrassa_object = {
+        gc.ID: result[0][0],
+        gc.NAME: result[0][1]
+    }
+
+    query = f"select distinct {COURSE_ID},{COURSE_NAME} from " \
+            f"{MADRASSA_DETAILS} inner join {COURSE} " \
+            f"on {MADRASSA_DETAILS}.{COURSE_ID} = {COURSE}.{ID} " \
+            f"where {COURSE_ID} = {course_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    course_object = {
+        gc.ID: result[0][0],
+        gc.NAME: result[0][1]
+    }
+
+    response = make_general_response(SUCCESS, "SUCCESS")
+    response[gc.DATA] = {}
+    response[gc.DATA][MADRASSA] = madrassa_object
+    response[gc.DATA][SHIFT] = shift_object
+    response[gc.DATA][COURSE] = course_object
+    return response, OK
 
 
 @app.route(ADD_USER, methods=[POST])
@@ -859,6 +1048,74 @@ def add_user():
         return response, BAD_REQUEST
 
     if not validate_cnic(request_body.get(gc.CNIC)):
+        response = make_general_response(INVALID_PARAMETER, "Invalid CNIC")
+        return response, BAD_REQUEST
+
+    if not validate_email(request_body.get(gc.EMAIL)):
+        response = make_general_response(INVALID_PARAMETER, "Invalid Email ID")
+        return response, BAD_REQUEST
+
+    if not validate_contact(request_body.get(gc.CONTACT)):
+        response = make_general_response(INVALID_PARAMETER, "Invalid Contact")
+        return response, BAD_REQUEST
+
+    if not validate_contact(request_body.get(gc.GUARDIAN_CONTACT)):
+        response = make_general_response(INVALID_PARAMETER, "Invalid Guardian Contact")
+        return response, BAD_REQUEST
+
+    if not validate_date(request_body.get(gc.DATE_OF_BIRTH)):
+        response = make_general_response(INVALID_PARAMETER, "Invalid DOB. Allowed Date format is YYYYMMDD")
+        return response, BAD_REQUEST
+
+    name = request_body.get(gc.NAME)
+    fname = request_body.get(gc.FATHER_NAME)
+    cnic = request_body.get(gc.CNIC)
+    email = request_body.get(gc.EMAIL)
+    mt = request_body.get(gc.MOTHER_TONGUE)
+    contact = request_body.get(gc.CONTACT)
+    gender_id = request_body.get(gc.GENDER_ID)
+    guardian_name = request_body.get(gc.GUARDIAN_NAME)
+    guardian_contact = request_body.get(gc.GUARDIAN_CONTACT)
+    dob = request_body.get(gc.DATE_OF_BIRTH)
+    age = request_body.get(gc.AGE)
+
+    index = select_max(USER) + 1
+    query = f"insert into {USER}({ID},{USER_NAME},{FATHER_NAME},{CNIC},{EMAIl},{MOTHER_TONGUE},{CONTACT}," \
+            f"{GENDER_ID},{GUARDIAN_NAME},{GUARDIAN_CONTACT},{DOB},{AGE})" \
+            f"values({index},'{name}','{fname}','{cnic}','{email}','{mt}','{contact}',{gender_id}," \
+            f"'{guardian_name}','{guardian_contact}','{dob}','{age}')"
+    print(query)
+    r = insert_query(query)
+    if r:
+        query = f"select * from {USER} where {ID} = {index}"
+        r = select_query(query)
+        result = r.fetchall()
+        data = {
+            gc.ID: result[0][0],
+            gc.NAME: result[0][1],
+            gc.FATHER_NAME: result[0][2],
+            gc.CNIC: result[0][3],
+            gc.EMAIL: result[0][4],
+            gc.MOTHER_TONGUE: result[0][5],
+            gc.CONTACT: result[0][6],
+            gc.GENDER_ID: result[0][7],
+            gc.GUARDIAN_NAME: result[0][8],
+            gc.GUARDIAN_CONTACT: result[0][9],
+            gc.DATE_OF_BIRTH: result[0][10],
+            gc.AGE: result[0][11],
+        }
+        response = make_general_response(SUCCESS, "SUCCESS")
+        response[gc.DATA] = data
+        return response, CREATED
+
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, BAD_REQUEST
+
+
+
+
+
 
 
     return flask.jsonify({flask.request.base_url: flask.request.method})
