@@ -4,6 +4,5 @@ config = {
     'DB_PASSWORD': '0900',
     'DB_HOST': 'localhost',
     'DB_NAME': 'ckbsm',
-    # 'JWT_SECRET_KEY': 'this is top secret'
-    'JWT_SECRET_KEY': 'SECRET CHANGED',
+    'JWT_SECRET_KEY': 'this is top secret'
 }
