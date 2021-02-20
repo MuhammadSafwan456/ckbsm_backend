@@ -1057,7 +1057,7 @@ def get_madrassa_details():
     for i in result:
         madrassa_object = map_response(i, mapper)
 
-    squery = f"select distinct {COURSE_ID} as {ID},{COURSE_NAME} from " \
+    query = f"select distinct {COURSE_ID} as {ID},{COURSE_NAME} from " \
             f"{MADRASSA_DETAILS} inner join {COURSE} " \
             f"on {MADRASSA_DETAILS}.{COURSE_ID} = {COURSE}.{ID} " \
             f"where {COURSE_ID} = {course_id}"
