@@ -4,5 +4,13 @@ mapper = {
     #Query Column name: Response name
 
     ID: gc.ID,
-    ROLE_NAME: gc.NAME
+    ROLE_NAME: gc.NAME,
+    SHIFT_NAME: gc.NAME,
+    START_TIME: gc.START_TIME,
+    END_TIME: gc.END_TIME,
+    COURSE_NAME: gc.NAME,
+    MADRASSA_NAME: gc.NAME,
+    GENDER: gc.GENDER
+
+
 }
