@@ -10,7 +10,7 @@ from constants.column_names import *
 from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
-
+from config.db_column_to_response import mapper
 
 user_api = Blueprint("user_api", __name__, url_prefix='')
 
@@ -58,7 +58,7 @@ def add_user():
     age = request_body.get(gc.AGE)
 
     index = select_max(USER) + 1
-    query = f"insert into {USER}({ID},{USER_NAME},{FATHER_NAME},{CNIC},{EMAIl},{MOTHER_TONGUE},{CONTACT}," \
+    query = f"insert into {USER}({ID},{USER_NAME},{FATHER_NAME},{CNIC},{EMAIL},{MOTHER_TONGUE},{CONTACT}," \
             f"{GENDER_ID},{GUARDIAN_NAME},{GUARDIAN_CONTACT},{DOB},{AGE})" \
             f"values({index},'{name}','{fname}','{cnic}','{email}','{mt}','{contact}',{gender_id}," \
             f"'{guardian_name}','{guardian_contact}','{dob}','{age}')"
@@ -68,20 +68,22 @@ def add_user():
         query = f"select * from {USER} where {ID} = {index}"
         r = select_query(query)
         result = r.fetchall()
-        data = {
-            gc.ID: result[0][0],
-            gc.NAME: result[0][1],
-            gc.FATHER_NAME: result[0][2],
-            gc.CNIC: result[0][3],
-            gc.EMAIL: result[0][4],
-            gc.MOTHER_TONGUE: result[0][5],
-            gc.CONTACT: result[0][6],
-            gc.GENDER_ID: result[0][7],
-            gc.GUARDIAN_NAME: result[0][8],
-            gc.GUARDIAN_CONTACT: result[0][9],
-            gc.DATE_OF_BIRTH: result[0][10],
-            gc.AGE: result[0][11],
-        }
+        for i in result:
+            data = map_response(i, mapper)
+        # data = {
+        #     gc.ID: result[0][0],
+        #     gc.NAME: result[0][1],
+        #     gc.FATHER_NAME: result[0][2],
+        #     gc.CNIC: result[0][3],
+        #     gc.EMAIL: result[0][4],
+        #     gc.MOTHER_TONGUE: result[0][5],
+        #     gc.CONTACT: result[0][6],
+        #     gc.GENDER_ID: result[0][7],
+        #     gc.GUARDIAN_NAME: result[0][8],
+        #     gc.GUARDIAN_CONTACT: result[0][9],
+        #     gc.DATE_OF_BIRTH: result[0][10],
+        #     gc.AGE: result[0][11],
+        # }
         response = make_general_response(SUCCESS, "SUCCESS")
         response[gc.DATA] = data
         return response, CREATED
@@ -89,8 +91,6 @@ def add_user():
     else:
         response = make_general_response(FAIL, "FAIL")
         return response, BAD_REQUEST
-
-    return flask.jsonify({flask.request.base_url: flask.request.method})
 
 
 @user_api.route(GET_USERS, methods=[GET])
