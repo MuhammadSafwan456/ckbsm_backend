@@ -20,7 +20,8 @@ def make_connection():
     """
     global my_db, my_cursor
     # my_db = mysql.connector.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD)
-    my_db = pymysql.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD, cursorclass=pymysql.cursors.DictCursor,autocommit=True)
+    my_db = pymysql.connect(host=DB_HOST, user=DB_USERNAME, password=DB_PASSWORD,
+                            cursorclass=pymysql.cursors.DictCursor, autocommit=True)
     my_cursor = my_db.cursor()
     query = use_database_query()
     select_query(query)
@@ -50,4 +51,3 @@ def insert_query(query):
     if my_cursor.rowcount > 0:
         return True
     return False
-

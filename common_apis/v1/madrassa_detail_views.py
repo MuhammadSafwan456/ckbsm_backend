@@ -1,4 +1,4 @@
-from flask import request,Blueprint
+from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.response import *
 from helper.validate import *
@@ -14,6 +14,7 @@ from codes.response_codes import *
 from common_apis.v1 import app
 
 madrassa_detail_api = Blueprint("madrassa_detail_api", __name__, url_prefix='')
+
 
 @madrassa_detail_api.route(SET_MADRASSA_DETAILS, methods=[POST])
 @authorize_request

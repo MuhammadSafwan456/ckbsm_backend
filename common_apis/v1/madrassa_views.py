@@ -1,4 +1,4 @@
-from flask import  request, Blueprint
+from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.response import *
 from helper.validate import *

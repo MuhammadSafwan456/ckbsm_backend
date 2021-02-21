@@ -1,4 +1,4 @@
-from flask import request,Blueprint
+from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.response import *
 from helper.validate import *
@@ -8,13 +8,13 @@ from constants.route_constants import *
 from constants.flask_constants import *
 from constants.table_names import *
 from constants.column_names import *
-from database_layer.database import select_query,insert_query
+from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from common_apis.v1 import app
 
-
 shift_api = Blueprint("shift_api", __name__, url_prefix='')
+
 
 @shift_api.route(GET_SHIFTS, methods=[GET])
 @authorize_request

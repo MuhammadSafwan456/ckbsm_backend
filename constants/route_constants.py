@@ -20,7 +20,6 @@ GET_GENDER = '/getGender'
 ADD_GENDER = '/addGender'
 UPDATE_GENDER = '/updateGender'
 DELETE_GENDER = '/deleteGender'
-
 SET_MADRASSA_DETAILS = '/setMadrassaDetail'
 GET_MADRASSA_DETAILS = '/getMadrassaDetail'
 ADD_USER = '/addUser'

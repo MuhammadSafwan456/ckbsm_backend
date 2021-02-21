@@ -97,4 +97,3 @@ def admin_dashboard():
         'totalMadrassas': madrassa_count
     }
     return response, OK
-
