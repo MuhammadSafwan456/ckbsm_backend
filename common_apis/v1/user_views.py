@@ -116,6 +116,7 @@ def get_users():
 
     cnic = query_params.get(CNIC)
     contact = query_params.get(CONTACT)
+
     where_clause = ""
 
     if cnic or contact:
@@ -143,10 +144,10 @@ def get_users():
     for i in result:
         data.append(map_response(i, mapper))
 
-    respone = make_general_response(SUCCESS, "Success")
-    respone[gc.DATA] = data
+    response = make_general_response(SUCCESS, "Success")
+    response[gc.DATA] = data
 
-    return respone, OK
+    return response, OK
 
 
 @user_api.route(ENROLL_USER, methods=[POST])
