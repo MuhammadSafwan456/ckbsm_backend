@@ -57,6 +57,14 @@ def add_user():
     dob = request_body.get(gc.DATE_OF_BIRTH)
     age = request_body.get(gc.AGE)
 
+    query = f"select * from {GENDER} where {ID}={gender_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    print(result)
+    if len(result) == 0:
+        response = make_general_response(GENDER_NOT_FOUND, f"GenderID {gender_id} doesn't exists")
+        return response, BAD_REQUEST
+
     index = select_max(USER) + 1
     query = f"insert into {USER}({ID},{USER_NAME},{FATHER_NAME},{CNIC},{EMAIL},{MOTHER_TONGUE},{CONTACT}," \
             f"{GENDER_ID},{GUARDIAN_NAME},{GUARDIAN_CONTACT},{DOB},{AGE})" \
@@ -96,7 +104,49 @@ def add_user():
 @user_api.route(GET_USERS, methods=[GET])
 @authorize_request
 def get_users():
-    return jsonify({request.base_url: request.method})
+    query_params = request.args
+    length_query_param = len(query_params)
+    if length_query_param == 0:
+        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
+        return response, BAD_REQUEST
+
+    elif not query_params.get(CNIC) and not query_params.get(CONTACT):
+        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
+        return response, BAD_REQUEST
+
+    cnic = query_params.get(CNIC)
+    contact = query_params.get(CONTACT)
+    where_clause = ""
+
+    if cnic or contact:
+        where_clause = where_clause + "where"
+
+    if cnic:
+        if not validate_cnic(cnic):
+            response = make_general_response(INVALID_PARAMETER, "Invalid CNIC")
+            return response, BAD_REQUEST
+        where_clause = where_clause + f" {CNIC}='{cnic}' "
+        if contact:
+            where_clause = where_clause + "and"
+
+    if contact:
+        if not validate_contact(contact):
+            response = make_general_response(INVALID_PARAMETER, "Invalid Contact")
+            return response, BAD_REQUEST
+        where_clause = where_clause + f" ({CONTACT}='{contact}' or {GUARDIAN_CONTACT}='{contact}')"
+
+    query = f"select * from {USER} " + where_clause
+    print(query)
+    r = select_query(query)
+    result = r.fetchall()
+    data = []
+    for i in result:
+        data.append(map_response(i, mapper))
+
+    respone = make_general_response(SUCCESS, "Success")
+    respone[gc.DATA] = data
+
+    return respone, OK
 
 
 @user_api.route(ENROLL_USER, methods=[POST])
