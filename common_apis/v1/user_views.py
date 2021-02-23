@@ -11,6 +11,9 @@ from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from config.db_column_to_response import mapper
+from helper.user import find_user_by_id, enroll_user_in_madrassa
+from helper.madrassa_detail import find_madrassa_detail_by_id
+from helper.role import find_role_by_id
 
 user_api = Blueprint("user_api", __name__, url_prefix='')
 
@@ -153,4 +156,43 @@ def get_users():
 @user_api.route(ENROLL_USER, methods=[POST])
 @authorize_request
 def enroll_users():
+    request_body = request.get_json()
+    missing = verify_param([gc.USER_ID, gc.ENROLMENT_DATE, gc.MADRASSA_DETAIL, gc.ROLE_ID], request_body)
+    if missing:
+        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+        return response, BAD_REQUEST
+
+    _id = request_body[gc.USER_ID]
+    user = find_user_by_id(_id)
+
+    if not user:
+        response = make_general_response(USER_NOT_FOUND, "User not found")
+        return response, BAD_REQUEST
+
+    madrassa_detail_id = request_body[gc.MADRASSA_DETAIL]
+    madrassa_detail = find_madrassa_detail_by_id(madrassa_detail_id)
+
+    if not madrassa_detail:
+        response = make_general_response(MADRASSA_DETAILS_NOT_FOUND, "Madrassa details not found")
+        return response, BAD_REQUEST
+
+    role_id = request_body[gc.ROLE_ID]
+    role = find_role_by_id(role_id)
+
+    if not role:
+        response = make_general_response(ROLE_NOT_FOUND, "Role not found")
+        return response, BAD_REQUEST
+
+    enrollment_date = request_body[gc.ENROLMENT_DATE]
+    if not validate_date(enrollment_date):
+        response = make_general_response(INVALID_PARAMETER, "Invalid Date Format. Allowed Date format is YYYYMMDD")
+        return response, BAD_REQUEST
+
+    enrolled, code = enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date)
+    if enrolled:
+        response = make_general_response(code,"SUCCESS")
+        return response, OK
+    response = make_general_response(code, "FAIL")
+    return response, BAD_REQUEST
+
     return jsonify({request.base_url: request.method})
