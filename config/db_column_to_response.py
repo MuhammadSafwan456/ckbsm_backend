@@ -23,5 +23,8 @@ mapper = {
     GUARDIAN_CONTACT: gc.GUARDIAN_CONTACT,
     DOB: gc.DATE_OF_BIRTH,
     AGE: gc.AGE,
+    SHIFT_ID: gc.SHIFT_ID,
+    MADRASSA_ID: gc.MADRASSA_ID,
+    COURSE_ID: gc.COURSE_ID
 
 }
