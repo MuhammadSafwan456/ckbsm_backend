@@ -1,6 +1,39 @@
 import constants.general_constants as gc
 import datetime
+from flask import request
 from codes.response_codes import PARAMETER_MISSING
+from functools import wraps
+from helper.validate import verify_param
+from codes.status_codes import BAD_REQUEST
+
+
+def request_header():
+    return request.headers
+
+
+def request_body():
+    print("_____________", request)
+    return request.get_json()
+
+
+def requires(fields):
+    def inner(f):
+        @wraps(f)
+        def wrap(*args, **kwargs):
+            body = request_body()
+
+            print('fields_______________', fields)
+            print('body_______________', body)
+            missing = verify_param(fields, body)
+            if missing:
+                response = make_general_response(PARAMETER_MISSING, missing + " is missing")
+                return response, BAD_REQUEST
+            else:
+                f(*args, **kwargs)
+
+        return wrap
+
+    return inner
 
 
 def make_general_response(code, detail):

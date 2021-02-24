@@ -12,6 +12,7 @@ from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from common_apis.v1 import app
+from helper.role import add_new_role,get_all_roles
 
 role_api = Blueprint("role_api", __name__, url_prefix='')
 
@@ -19,16 +20,14 @@ role_api = Blueprint("role_api", __name__, url_prefix='')
 @role_api.route(GET_ROLES, methods=[GET])
 @authorize_request
 def get_roles():
-    query = f"select * from {ROLE}"
-    r = select_query(query)
-    result = r.fetchall()
-    data = []
-    for i in result:
-        mapped_data = map_response(i, mapper)
-        data.append(mapped_data)
-    response = make_general_response(SUCCESS, "Success")
-    response[gc.DATA] = data
-    return response, OK
+    roles = get_all_roles()
+    if roles:
+        response = make_general_response(SUCCESS, "Success")
+        response[gc.DATA] = roles
+        return response, OK
+    else:
+        response = make_general_response(FAIL, "FAIL")
+        return response, BAD_REQUEST
 
 
 @role_api.route(ADD_ROLES, methods=[POST])

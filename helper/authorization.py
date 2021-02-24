@@ -10,13 +10,15 @@ from constants.flask_constants import *
 from hashlib import sha256
 import jwt
 from flask import request, current_app
+from helper.request_response import request_header
 
 
 def authorize_request(f):
     @wraps(f)
     def wrap(*args, **kwargs):
         token = None
-        if X_ACCESS_TOKEN in request.headers:
+        headers = request_header()
+        if X_ACCESS_TOKEN in headers:
             token = request.headers[X_ACCESS_TOKEN]
         if not token:
             response = make_general_response(MISSING_TOKEN, 'token is missing')
