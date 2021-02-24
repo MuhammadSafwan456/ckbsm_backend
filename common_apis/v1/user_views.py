@@ -1,6 +1,6 @@
 from flask import request, jsonify, Blueprint
 from helper.authorization import authorize_request
-from helper.response import *
+from helper.request_response import *
 from helper.validate import *
 from helper.database import *
 from constants.route_constants import *

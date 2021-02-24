@@ -3,7 +3,7 @@ from constants.column_names import ID, USER_ID, ROLE_ID, MADRASSA_DETAIL_ID, ENR
 import constants.general_constants as gc
 from config.db_column_to_response import mapper
 from database_layer.database import select_query, insert_query
-from helper.response import map_response
+from helper.request_response import map_response
 from helper.database import select_max
 from codes.response_codes import USER_ALREADY_ENROLLED,SUCCESS, FAIL
 

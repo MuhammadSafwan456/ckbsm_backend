@@ -1,5 +1,5 @@
 from functools import wraps
-from helper.response import make_general_response
+from helper.request_response import make_general_response
 from codes.status_codes import *
 from codes.response_codes import *
 import constants.general_constants as gc

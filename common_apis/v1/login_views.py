@@ -2,7 +2,7 @@ from constants.route_constants import *
 from config.app_config import JWT_SECRET_KEY
 from flask import Blueprint, current_app
 from helper.authorization import *
-from helper.response import *
+from helper.request_response import *
 from helper.database import *
 
 login_api = Blueprint("login_api", __name__, url_prefix='')
