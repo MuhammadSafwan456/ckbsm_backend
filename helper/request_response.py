@@ -1,7 +1,7 @@
 import constants.general_constants as gc
 import datetime
 from flask import request
-from codes.response_codes import PARAMETER_MISSING
+from codes.response_codes import PARAMETER_MISSING, QUERY_PARAMTER_MISSING, FAIL
 from functools import wraps
 from helper.validate import verify_param
 from codes.status_codes import BAD_REQUEST
@@ -11,11 +11,19 @@ def request_header():
     return request.headers
 
 
-def requires(fields):
+def requires(fields, **agr):
     def inner(f):
         @wraps(f)
         def wrap(*args, **kwargs):
-            body = request.get_json()
+
+            if agr.get(gc.BODY) == gc.JSON:
+                body = request.get_json()
+            elif agr.get(gc.BODY) == gc.QUERY_PARAMS:
+                body = request.args
+            else:
+                response = make_general_response(FAIL, "FAIL")
+                return response, BAD_REQUEST
+
             missing = verify_param(fields, body)
             if missing:
                 response = make_general_response(PARAMETER_MISSING, missing + " is missing")
@@ -24,6 +32,7 @@ def requires(fields):
                 return f(*args, **kwargs)
 
         return wrap
+
     return inner
 
 

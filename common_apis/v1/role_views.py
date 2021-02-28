@@ -12,7 +12,7 @@ from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from common_apis.v1 import app
-from helper.role import add_new_role, get_all_roles
+from helper.role import add_new_role, get_all_roles, update_role
 from helper.request_response import requires
 
 role_api = Blueprint("role_api", __name__, url_prefix='')
@@ -33,62 +33,35 @@ def get_roles():
 
 @role_api.route(ADD_ROLES, methods=[POST])
 @authorize_request
-@requires([gc.NAME])
+@requires([gc.NAME], body=gc.JSON)
 def add_roles():
     request_body = request.get_json()
-    added = add_new_role(request_body[gc.NAME])
-    if added:
-        response = make_general_response(SUCCESS, "SUCCESS")
-        response[gc.DATA] = added
+    data, response_code, detail = add_new_role(request_body[gc.NAME])
+    response = make_general_response(response_code, detail)
+    if data:
+        response[gc.DATA] = data
         return response, CREATED
-    else:
-        response = make_general_response(FAIL, "FAIL")
-        return response, OK
+    return response, BAD_REQUEST
 
 
 @role_api.route(UPDATE_ROLES, methods=[PUT])
 @authorize_request
+@requires([gc.ID, gc.NAME], body=gc.JSON)
 def update_roles():
     request_body = request.get_json()
-    missing = verify_param([gc.ID, gc.NAME], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
-
-    query = f"update {ROLE} set {ROLE_NAME} = '{request_body[gc.NAME]}' where id = {request_body[gc.ID]}"
-    r = insert_query(query)
-    if r:
-        query = f"select * from {ROLE} where {ID} = {request_body[gc.ID]}"
-        r = select_query(query)
-        result = r.fetchall()
-        for i in result:
-            data = map_response(i, mapper)
-
-        response = make_general_response(SUCCESS, "SUCCESS")
+    data, response_code, detail = update_role(request_body[gc.ID], request_body[gc.NAME])
+    response = make_general_response(response_code, detail)
+    if data:
         response[gc.DATA] = data
-        return response, CREATED
-
-    else:
-        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found or Already Updated")
         return response, OK
+    return response, BAD_REQUEST
 
 
 @role_api.route(DELETE_ROLES, methods=[DELETE])
 @authorize_request
+@requires([gc.ID], body=gc.QUERY_PARAMS)
 def delete_roles():
     query_params = request.args
-    length_query_param = len(query_params)
-    if length_query_param == 0:
-        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
-        return response, BAD_REQUEST
-
-    elif len(query_params) > 1:
-        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
-        return response, BAD_REQUEST
-
-    elif not query_params.get(gc.ID):
-        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
-        return response, BAD_REQUEST
 
     query = f"select * from {ENROLLMENT} where {ROLE_ID}={query_params[gc.ID]}"
     r = select_query(query)

@@ -1,6 +1,9 @@
 RESPONSE_CODE = 'response_code'
 RESPONSE_DETAIL = 'response_detail'
 DATA = "data"
+JSON = 'JSON'
+QUERY_PARAMS = 'QUERY_PARAMS'
+BODY = 'body'
 USERNAME = 'username'
 USER_ID = 'userId'
 ROLE_ID = 'roleId'
