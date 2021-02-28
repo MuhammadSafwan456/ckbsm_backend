@@ -12,7 +12,8 @@ from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from common_apis.v1 import app
-from helper.role import add_new_role,get_all_roles
+from helper.role import add_new_role, get_all_roles
+from helper.request_response import requires
 
 role_api = Blueprint("role_api", __name__, url_prefix='')
 
@@ -32,27 +33,14 @@ def get_roles():
 
 @role_api.route(ADD_ROLES, methods=[POST])
 @authorize_request
+@requires([gc.NAME])
 def add_roles():
     request_body = request.get_json()
-    missing = verify_param([gc.NAME], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
-    index = select_max(ROLE) + 1
-
-    query = f"insert into {ROLE}({ID}, {ROLE_NAME}) values({index},'{request_body[gc.NAME]}')"
-    r = insert_query(query)
-    if r:
-        query = f"select * from {ROLE} where id = {index}"
-        r = select_query(query)
-        result = r.fetchall()
-
-        for i in result:
-            data = map_response(i, mapper)
+    added = add_new_role(request_body[gc.NAME])
+    if added:
         response = make_general_response(SUCCESS, "SUCCESS")
-        response[gc.DATA] = data
+        response[gc.DATA] = added
         return response, CREATED
-
     else:
         response = make_general_response(FAIL, "FAIL")
         return response, OK

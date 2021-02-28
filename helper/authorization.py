@@ -19,7 +19,7 @@ def authorize_request(f):
         token = None
         headers = request_header()
         if X_ACCESS_TOKEN in headers:
-            token = request.headers[X_ACCESS_TOKEN]
+            token = headers[X_ACCESS_TOKEN]
         if not token:
             response = make_general_response(MISSING_TOKEN, 'token is missing')
             return response, UNAUTHORIZED

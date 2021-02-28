@@ -11,28 +11,19 @@ def request_header():
     return request.headers
 
 
-def request_body():
-    print("_____________", request)
-    return request.get_json()
-
-
 def requires(fields):
     def inner(f):
         @wraps(f)
         def wrap(*args, **kwargs):
-            body = request_body()
-
-            print('fields_______________', fields)
-            print('body_______________', body)
+            body = request.get_json()
             missing = verify_param(fields, body)
             if missing:
                 response = make_general_response(PARAMETER_MISSING, missing + " is missing")
                 return response, BAD_REQUEST
             else:
-                f(*args, **kwargs)
+                return f(*args, **kwargs)
 
         return wrap
-
     return inner
 
 

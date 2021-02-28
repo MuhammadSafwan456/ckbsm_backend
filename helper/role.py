@@ -1,7 +1,8 @@
 from constants.table_names import ROLE
-from constants.column_names import ID
+from constants.column_names import ID,ROLE_NAME
 from config.db_column_to_response import mapper
 from database_layer import database
+from helper.database import select_max
 from helper.request_response import map_response
 
 
@@ -17,11 +18,17 @@ def get_all_roles():
 
 
 def add_new_role(name):
-    pass
+    index = select_max(ROLE) + 1
+    query = f"insert into {ROLE}({ID}, {ROLE_NAME}) values({index},'{name}')"
+    r = database.insert_query(query)
+    if r:
+        return find_role_by_id(index)
+    return None
+
 
 def find_role_by_id(_id):
     query = f"select * from {ROLE} where {ID}={_id}"
-    r = select_query(query)
+    r = database.select_query(query)
     result = r.fetchall()
     role = None
     for i in result:
