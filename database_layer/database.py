@@ -33,8 +33,10 @@ def select_query(query):
     """
     if my_db == NO_CONNECTION:
         make_connection()
-
-    my_cursor.execute(query)
+    try:
+        my_cursor.execute(query)
+    except:
+        return False
     return my_cursor
 
 

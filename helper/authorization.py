@@ -29,11 +29,14 @@ def authorize_request(f):
         data = jwt.decode(token, current_app.config[SECRET_KEY], algorithms=[algorithm])
         query = f"Select {PASSWORD} from {ADMIN} where {USERNAME} = '{data.get(gc.USERNAME)}'"
         r = select_query(query)
-        result = r.fetchall()
-        password = result[0][PASSWORD]
-        hashed_password = sha256(password.encode(gc.ASCII)).hexdigest()
-        if hashed_password == data.get(gc.PASSWORD):
-            return f(*args, **kwargs)
+        if r:
+            result = r.fetchall()
+            password = result[0][PASSWORD]
+            hashed_password = sha256(password.encode(gc.ASCII)).hexdigest()
+            if hashed_password == data.get(gc.PASSWORD):
+                return f(*args, **kwargs)
+        response = make_general_response(FAIL, 'FAIL')
+        return response, BAD_REQUEST
         # except:
         #     response = make_general_response(INVALID_TOKEN, 'token is invalid')
         #     return response, UNAUTHORIZED

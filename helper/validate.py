@@ -15,7 +15,7 @@ def validate_time(time):
             return False, None
         hour = time[0:2]
         mint = time[2:4]
-        if int(hour) > 23 or int(mint) > 60:
+        if int(hour) > 23 or int(mint) > 59:
             return False, None
     except:
         return False, None

@@ -11,12 +11,14 @@ from helper.user import find_enrollment_of_role
 def get_all_roles():
     query = f"select * from {ROLE}"
     r = database.select_query(query)
-    result = r.fetchall()
-    roles = []
-    for i in result:
-        mapped_data = map_response(i, mapper)
-        roles.append(mapped_data)
-    return roles
+    if r:
+        result = r.fetchall()
+        roles = []
+        for i in result:
+            mapped_data = map_response(i, mapper)
+            roles.append(mapped_data)
+        return roles
+    return []
 
 
 def add_new_role(name):
@@ -32,11 +34,13 @@ def add_new_role(name):
 def find_role_by_id(_id):
     query = f"select * from {ROLE} where {ID}={_id}"
     r = database.select_query(query)
-    result = r.fetchall()
-    role = None
-    for i in result:
-        role = map_response(i, mapper)
-    return role
+    if r:
+        result = r.fetchall()
+        role = None
+        for i in result:
+            role = map_response(i, mapper)
+        return role
+    return None
 
 
 def update_role(_id, name):

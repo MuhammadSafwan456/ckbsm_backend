@@ -15,24 +15,27 @@ def user_already_enrolled(user, madrassa_detail, role):
             f"{MADRASSA_DETAIL_ID}={madrassa_detail[gc.ID]}"
     print(query)
     r = select_query(query)
-    result = r.fetchall()
-    print(result)
-    enrollment = None
-    for i in result:
-        enrollment = map_response(i, mapper)
+    if r:
+        result = r.fetchall()
+        print(result)
+        enrollment = None
+        for i in result:
+            enrollment = map_response(i, mapper)
 
-    print("ENROLLMENT FOUND",enrollment)
-    return enrollment is not None
+        return enrollment is not None
+    return True
 
 
 def find_user_by_id(_id):
     query = f"select * from {USER} where {ID}={_id}"
     r = select_query(query)
-    result = r.fetchall()
-    user = None
-    for i in result:
-        user = map_response(i, mapper)
-    return user
+    if r:
+        result = r.fetchall()
+        user = None
+        for i in result:
+            user = map_response(i, mapper)
+        return user
+    return None
 
 
 def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
@@ -53,11 +56,13 @@ def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
 def find_enrollment_of_role(role_id):
     query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
     r = select_query(query)
-    result = r.fetchall()
-    enrollment = None
-    for i in result:
-        enrollment = map_response(i, mapper)
-    return enrollment
+    if r:
+        result = r.fetchall()
+        enrollment = None
+        for i in result:
+            enrollment = map_response(i, mapper)
+        return enrollment
+    return None
 
 
 
