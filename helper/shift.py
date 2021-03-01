@@ -23,7 +23,11 @@ def get_all_shifts():
 
 
 def add_new_shift(name,start_time, end_time):
-    index = select_max(SHIFT) + 1
+    max_index = select_max(SHIFT)
+    if max_index is None:
+        return [], FAIL, "FAIL"
+
+    index = max_index + 1
     query = f"insert into shift(id,shift_name,start_time,end_time) " \
             f"values({index},'{name}','{start_time}','{end_time}')"
     r = database.insert_query(query)

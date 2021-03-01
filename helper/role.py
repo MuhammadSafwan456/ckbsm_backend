@@ -22,7 +22,10 @@ def get_all_roles():
 
 
 def add_new_role(name):
-    index = select_max(ROLE) + 1
+    max_index = select_max(ROLE)
+    if max_index is None:
+        return [], FAIL, "FAIL"
+    index = max_index + 1
     query = f"insert into {ROLE}({ID}, {ROLE_NAME}) values({index},'{name}')"
     r = database.insert_query(query)
     if r:

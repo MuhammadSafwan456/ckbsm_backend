@@ -10,5 +10,5 @@ def select_max(table):
         if result[0].get(ID):
             return result[0].get(ID)
         return 0
-    return False
+    return None
 
