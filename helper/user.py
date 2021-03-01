@@ -5,7 +5,7 @@ from config.db_column_to_response import mapper
 from database_layer.database import select_query, insert_query
 from helper.request_response import map_response
 from helper.database import select_max
-from codes.response_codes import USER_ALREADY_ENROLLED,SUCCESS, FAIL
+from codes.response_codes import USER_ALREADY_ENROLLED, SUCCESS, FAIL
 
 
 def user_already_enrolled(user, madrassa_detail, role):
@@ -53,13 +53,9 @@ def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
     return False, FAIL
 
 
-def find_enrollment_by_role_id(role_id):
-    query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
-    return select_query(query)
-
-
 def find_enrollment_of_role(role_id):
-    r = find_enrollment_by_role_id(role_id)
+    query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
+    r = select_query(query)
     if r:
         result = r.fetchall()
         enrollment = None
@@ -67,6 +63,3 @@ def find_enrollment_of_role(role_id):
             enrollment = map_response(i, mapper)
         return enrollment
     return None
-
-
-
