@@ -53,9 +53,13 @@ def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
     return False, FAIL
 
 
-def find_enrollment_of_role(role_id):
+def find_enrollment_by_role_id(role_id):
     query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
-    r = select_query(query)
+    return select_query(query)
+
+
+def find_enrollment_of_role(role_id):
+    r = find_enrollment_by_role_id(role_id)
     if r:
         result = r.fetchall()
         enrollment = None

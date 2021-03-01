@@ -53,7 +53,7 @@ def add_new_role(name):
     if max_index is None:
         return [], FAIL, "FAIL"
     index = max_index + 1
-    r = insert_role_by_id(index,name)
+    r = insert_role_by_id(index, name)
     if r:
         role = find_role_by_id(index)
         return role, SUCCESS, "SUCCESS"
