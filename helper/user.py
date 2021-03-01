@@ -49,3 +49,15 @@ def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
         return True, SUCCESS
     return False, FAIL
 
+
+def find_enrollment_of_role(role_id):
+    query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
+    r = select_query(query)
+    result = r.fetchall()
+    enrollment = None
+    for i in result:
+        enrollment = map_response(i, mapper)
+    return enrollment
+
+
+

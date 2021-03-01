@@ -5,6 +5,7 @@ from database_layer import database
 from helper.database import select_max
 from helper.request_response import map_response
 from codes.response_codes import ROLE_NOT_FOUND, SUCCESS, FAIL
+from helper.user import find_enrollment_of_role
 
 
 def get_all_roles():
@@ -50,3 +51,17 @@ def update_role(_id, name):
         return role, SUCCESS, "SUCCESS"
     else:
         return [], ROLE_NOT_FOUND, "Already Up to Date"
+
+
+def delete_role(_id):
+    enrollment = find_enrollment_of_role(_id)
+    if enrollment:
+        return False, ROLE_NOT_FOUND, f"Cannot delete roleID {_id}.It is in used somewhere else"
+
+    query = f'delete from {ROLE} where {ID} ={_id}'
+    r = database.insert_query(query)
+    if r:
+        return True, SUCCESS, "SUCCESS"
+
+    else:
+        return False, ROLE_NOT_FOUND, "ROLE_NOT_FOUND"

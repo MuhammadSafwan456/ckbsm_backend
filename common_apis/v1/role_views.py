@@ -12,7 +12,7 @@ from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from common_apis.v1 import app
-from helper.role import add_new_role, get_all_roles, update_role
+from helper.role import add_new_role, get_all_roles, update_role, delete_role
 from helper.request_response import requires
 
 role_api = Blueprint("role_api", __name__, url_prefix='')
@@ -61,23 +61,13 @@ def update_roles():
 @authorize_request
 @requires([gc.ID], body=gc.QUERY_PARAMS)
 def delete_roles():
+
     query_params = request.args
-
-    query = f"select * from {ENROLLMENT} where {ROLE_ID}={query_params[gc.ID]}"
-    r = select_query(query)
-    result = r.fetchall()
-    if len(result) > 0:
-        response = make_general_response(SHIFT_NOT_FOUND,
-                                         f"Cannot delete roleID {query_params[gc.ID]}.It is in used somewhere else")
+    deleted, code, detail = delete_role(query_params[gc.ID])
+    response = make_general_response(code,detail)
+    response[gc.DELETED] = deleted
+    if deleted:
         return response, OK
-    query = f'delete from {ROLE} where {ID} ={query_params[gc.ID]}'
-    r = insert_query(query)
-    if r:
-        response = make_general_response(SUCCESS, "SUCCESS")
-        response[gc.DELETED] = r
-        return response, CREATED
+    return response, BAD_REQUEST
 
-    else:
-        response = make_general_response(ROLE_NOT_FOUND, "RoleID not found")
-        response[gc.DELETED] = r
-        return response, OK
+
