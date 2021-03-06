@@ -21,7 +21,6 @@ def set_madrassa_details():
                                                            request_body[gc.MADRASSA_ID])
     response = make_general_response(response_code, detail)
     if data:
-        print(f"_____________________{data}")
         response[gc.DATA] = data
         return response, CREATED
     return response, BAD_REQUEST
