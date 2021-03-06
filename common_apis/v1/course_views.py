@@ -47,32 +47,12 @@ def add_courses():
 @requires([gc.ID, gc.NAME], body=gc.JSON)
 def update_courses():
     request_body = request.get_json()
-
     data, response_code, detail = update_course(request_body[gc.ID], request_body[gc.NAME])
     response = make_general_response(response_code, detail)
     if data:
         response[gc.DATA] = data
         return response, OK
     return response, BAD_REQUEST
-
-    query = f"update {COURSE} set {COURSE_NAME} = '{request_body[gc.NAME]}' where {ID} = {request_body[gc.ID]}"
-    r = insert_query(query)
-    if r:
-        query = f"select * from {COURSE} where {ID} = {request_body[ID]}"
-
-        r = select_query(query)
-        result = r.fetchall()
-
-        for i in result:
-            data = map_response(i, mapper)
-
-        response = make_general_response(SUCCESS, "SUCCESS")
-        response[gc.DATA] = data
-        return response, CREATED
-
-    else:
-        response = make_general_response(COURSE_NOT_FOUND, "CourseID not found or Already Updated")
-        return response, OK
 
 
 @course_api.route(DELETE_COURSES, methods=[DELETE])
