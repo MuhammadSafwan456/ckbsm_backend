@@ -2,8 +2,6 @@ from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.request_response import *
 from helper.validate import *
-from helper.database import *
-from config.db_column_to_response import mapper
 from constants.route_constants import *
 from constants.flask_constants import *
 from codes.status_codes import *
@@ -54,7 +52,7 @@ def add_shifts():
 
 @shift_api.route(UPDATE_SHIFT, methods=[PUT])
 @authorize_request
-@requires([gc.NAME, gc.START_TIME, gc.END_TIME], body=gc.JSON)
+@requires([gc.ID, gc.NAME, gc.START_TIME, gc.END_TIME], body=gc.JSON)
 def update_shifts():
     request_body = request.get_json()
 
@@ -74,9 +72,6 @@ def update_shifts():
         response[gc.DATA] = data
         return response, OK
     return response, BAD_REQUEST
-
-
-
 
 
 @shift_api.route(DELETE_SHIFTS, methods=[DELETE])
