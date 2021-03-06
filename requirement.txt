@@ -9,5 +9,6 @@ mysql-connector-python==8.0.23
 protobuf==3.14.0
 pycparser==2.20
 PyJWT==2.0.1
+PyMySQL==1.0.2
 six==1.15.0
 Werkzeug==1.0.1
