@@ -5,7 +5,6 @@ from database_layer import database
 from helper.database import select_max
 from helper.request_response import map_response
 from codes.response_codes import SHIFT_NOT_FOUND, SUCCESS, FAIL
-from helper.madrassa_detail import find_madrassa_detail_by_shift_id
 
 
 def find_shift_by_id(_id):
@@ -76,6 +75,7 @@ def update_shift(_id, name, start_time, end_time):
 
 
 def delete_shift(_id):
+    from helper.madrassa_detail import find_madrassa_detail_by_shift_id
     madrassa_detail = find_madrassa_detail_by_shift_id(_id)
     if madrassa_detail:
         return False, SHIFT_NOT_FOUND, f"Cannot delete shiftID {_id}.It is in used somewhere else"

@@ -5,7 +5,6 @@ from database_layer import database
 from helper.database import select_max
 from helper.request_response import map_response
 from codes.response_codes import COURSE_NOT_FOUND, SUCCESS, FAIL
-from helper.madrassa_detail import find_madrassa_detail_by_course_id
 
 
 def find_course_by_id(_id):
@@ -73,6 +72,7 @@ def update_course(_id, name):
 
 
 def delete_course(_id):
+    from helper.madrassa_detail import find_madrassa_detail_by_course_id
     madrassa_detail = find_madrassa_detail_by_course_id(_id)
     if madrassa_detail:
         return False, COURSE_NOT_FOUND, f"Cannot delete courseID {_id}.It is in used somewhere else"

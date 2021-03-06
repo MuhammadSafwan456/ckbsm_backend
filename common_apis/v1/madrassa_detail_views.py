@@ -1,16 +1,12 @@
 from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.request_response import *
-from helper.validate import *
-from helper.database import *
-from config.db_column_to_response import mapper
 from constants.route_constants import *
 from constants.flask_constants import *
-from constants.table_names import *
-from constants.column_names import *
-from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
+from helper.request_response import requires
+from helper.madrassa_detail import set_new_madrassa_details, get_madrassa_detail_by_id
 from common_apis.v1 import app
 
 madrassa_detail_api = Blueprint("madrassa_detail_api", __name__, url_prefix='')
@@ -18,92 +14,17 @@ madrassa_detail_api = Blueprint("madrassa_detail_api", __name__, url_prefix='')
 
 @madrassa_detail_api.route(SET_MADRASSA_DETAILS, methods=[POST])
 @authorize_request
+@requires([gc.MADRASSA_ID, gc.SHIFT_ID, gc.COURSE_ID], body=gc.JSON)
 def set_madrassa_details():
     request_body = request.get_json()
-    missing = verify_param([gc.MADRASSA_ID, gc.SHIFT_ID, gc.COURSE_ID], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
-
-    index = select_max(MADRASSA_DETAILS) + 1
-
-    shift_id = request_body[gc.SHIFT_ID]
-    course_id = request_body[gc.COURSE_ID]
-    madrassa_id = request_body[gc.MADRASSA_ID]
-
-    query = f"select * from {SHIFT} where {ID}={shift_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    if len(result) == 0:
-        response = make_general_response(SHIFT_NOT_FOUND, "shift not found")
-        return response, BAD_REQUEST
-
-    query = f"select * from {COURSE} where {ID}={course_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    if len(result) == 0:
-        response = make_general_response(COURSE_NOT_FOUND, "course not found")
-        return response, BAD_REQUEST
-
-    query = f"select * from {MADRASSA} where {ID}={madrassa_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    if len(result) == 0:
-        response = make_general_response(MADRASSA_NOT_FOUND, "madrassa not found")
-        return response, BAD_REQUEST
-
-    query = f"select * from {MADRASSA_DETAILS} where " \
-            f"{SHIFT_ID}={shift_id} and " \
-            f"{MADRASSA_ID}={madrassa_id} and " \
-            f"{COURSE_ID}={course_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    if len(result) > 0:
-        print(result)
-        response = make_general_response(ALREADY_EXIST, f"Madrassa_details already exist with id={result[0][gc.ID]}")
-        return response, OK
-    query = f"insert into {MADRASSA_DETAILS}({ID}, {SHIFT_ID}, {COURSE_ID}, {MADRASSA_ID})" \
-            f"values({index}, {shift_id}, {course_id}, {madrassa_id})"
-
-    r = insert_query(query)
-    if r:
-        query = f"select distinct {SHIFT_ID} as {ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
-                f"from {MADRASSA_DETAILS} inner join {SHIFT} on " \
-                f"{MADRASSA_DETAILS}.{SHIFT_ID} = {SHIFT}.{ID} " \
-                f"where {SHIFT_ID} = {shift_id}"
-        r = select_query(query)
-        result = r.fetchall()
-        for i in result:
-            shift_object = map_response(i, mapper)
-
-        query = f"select distinct {MADRASSA_ID} as {ID},{MADRASSA_NAME} from " \
-                f"{MADRASSA_DETAILS} inner join {MADRASSA} " \
-                f"on {MADRASSA_DETAILS}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
-                f"where {MADRASSA_ID} = {madrassa_id}"
-        r = select_query(query)
-        result = r.fetchall()
-        for i in result:
-            madrassa_object = map_response(i, mapper)
-
-        query = f"select distinct {COURSE_ID} as {ID},{COURSE_NAME} from " \
-                f"{MADRASSA_DETAILS} inner join {COURSE} " \
-                f"on {MADRASSA_DETAILS}.{COURSE_ID} = {COURSE}.{ID} " \
-                f"where {COURSE_ID} = {course_id}"
-        r = select_query(query)
-        result = r.fetchall()
-        for i in result:
-            course_object = map_response(i, mapper)
-
-        response = make_general_response(SUCCESS, "SUCCESS")
-        response[gc.DATA] = {}
-        response[gc.DATA][MADRASSA] = madrassa_object
-        response[gc.DATA][SHIFT] = shift_object
-        response[gc.DATA][COURSE] = course_object
+    data, response_code, detail = set_new_madrassa_details(request_body[gc.SHIFT_ID], request_body[gc.COURSE_ID],
+                                                           request_body[gc.MADRASSA_ID])
+    response = make_general_response(response_code, detail)
+    if data:
+        print(f"_____________________{data}")
+        response[gc.DATA] = data
         return response, CREATED
-
-    else:
-        response = make_general_response(FAIL, "FAIL")
-        return response, OK
+    return response, BAD_REQUEST
 
 
 # def first_row_first_col(query):
@@ -227,61 +148,15 @@ def set_madrassa_details():
 
 @madrassa_detail_api.route(GET_MADRASSA_DETAILS, methods=[GET])
 @authorize_request
+@requires([gc.MADRASSA_ID], body=gc.QUERY_PARAMS)
 def get_madrassa_details():
     query_params = request.args
-    length_query_param = len(query_params)
-    if length_query_param == 0:
-        response = make_general_response(MISSING_QUERY_PARAM, "Query params are missing")
-        return response, BAD_REQUEST
-
-    elif len(query_params) > 1:
-        response = make_general_response(ADDITIONAL_QUERY_PARAM, "Additional Query params")
-        return response, BAD_REQUEST
-
-    elif not query_params.get(gc.MADRASSA_ID):
-        response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
-        return response, BAD_REQUEST
-
     madrassa_detail_id = query_params.get(gc.MADRASSA_ID)
-
-    query = f"select * from {MADRASSA_DETAILS} where {gc.ID} = {madrassa_detail_id}"
-    r = select_query(query)
-    result = r.fetchall()
-
-    shift_id = result[0][SHIFT_ID]
-    madrassa_id = result[0][MADRASSA_ID]
-    course_id = result[0][COURSE_ID]
-
-    query = f"select distinct {SHIFT_ID} as {ID},{SHIFT_NAME},{START_TIME},{END_TIME} " \
-            f"from {MADRASSA_DETAILS} inner join {SHIFT} on " \
-            f"{MADRASSA_DETAILS}.{SHIFT_ID} = {SHIFT}.{ID} " \
-            f"where {SHIFT_ID} = {shift_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    for i in result:
-        shift_object = map_response(i, mapper)
-
-    query = f"select distinct {MADRASSA_ID} as {ID},{MADRASSA_NAME} from " \
-            f"{MADRASSA_DETAILS} inner join {MADRASSA} " \
-            f"on {MADRASSA_DETAILS}.{MADRASSA_ID} = {MADRASSA}.{ID} " \
-            f"where {MADRASSA_ID} = {madrassa_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    for i in result:
-        madrassa_object = map_response(i, mapper)
-
-    query = f"select distinct {COURSE_ID} as {ID},{COURSE_NAME} from " \
-            f"{MADRASSA_DETAILS} inner join {COURSE} " \
-            f"on {MADRASSA_DETAILS}.{COURSE_ID} = {COURSE}.{ID} " \
-            f"where {COURSE_ID} = {course_id}"
-    r = select_query(query)
-    result = r.fetchall()
-    for i in result:
-        course_object = map_response(i, mapper)
-
-    response = make_general_response(SUCCESS, "SUCCESS")
-    response[gc.DATA] = {}
-    response[gc.DATA][MADRASSA] = madrassa_object
-    response[gc.DATA][SHIFT] = shift_object
-    response[gc.DATA][COURSE] = course_object
-    return response, OK
+    madrassa_detail = get_madrassa_detail_by_id(madrassa_detail_id)
+    if madrassa_detail:
+        response = make_general_response(SUCCESS, "Success")
+        response[gc.DATA] = madrassa_detail
+        return response, OK
+    else:
+        response = make_general_response(MADRASSA_NOT_FOUND, "Madrassa Details Not found")
+        return response, BAD_REQUEST
