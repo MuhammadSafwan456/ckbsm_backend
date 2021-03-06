@@ -2,13 +2,8 @@ from flask import request, Blueprint
 from helper.authorization import authorize_request
 from helper.request_response import *
 from helper.validate import *
-from helper.database import *
-from config.db_column_to_response import mapper
 from constants.route_constants import *
 from constants.flask_constants import *
-from constants.table_names import *
-from constants.column_names import *
-from database_layer.database import select_query, insert_query
 from codes.status_codes import *
 from codes.response_codes import *
 from helper.madrassa import get_all_madrassas, add_new_madrassa, update_madrassa, delete_madrassa
@@ -55,12 +50,6 @@ def update_madrassas():
         response[gc.DATA] = data
         return response, OK
     return response, BAD_REQUEST
-
-    request_body = request.get_json()
-    missing = verify_param([gc.ID, gc.NAME], request_body)
-    if missing:
-        response = make_general_response(PARAMETER_MISSING, missing + " is missing")
-        return response, BAD_REQUEST
 
 
 @madrassa_api.route(DELETE_MADRASSAS, methods=[DELETE])

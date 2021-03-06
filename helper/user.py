@@ -1,5 +1,5 @@
 from constants.table_names import USER, ENROLLMENT
-from constants.column_names import ID, USER_ID, ROLE_ID, MADRASSA_DETAIL_ID, ENROLLMENT_DATE
+from constants.column_names import ID, USER_ID, ROLE_ID, MADRASSA_DETAIL_ID, ENROLLMENT_DATE, GENDER_ID
 import constants.general_constants as gc
 from config.db_column_to_response import mapper
 from database_layer.database import select_query, insert_query
@@ -28,6 +28,18 @@ def user_already_enrolled(user, madrassa_detail, role):
 
 def find_user_by_id(_id):
     query = f"select * from {USER} where {ID}={_id}"
+    r = select_query(query)
+    if r:
+        result = r.fetchall()
+        user = None
+        for i in result:
+            user = map_response(i, mapper)
+        return user
+    return None
+
+
+def find_user_by_gender(gender_id):
+    query = f"select * from {USER} where {GENDER_ID}={gender_id}"
     r = select_query(query)
     if r:
         result = r.fetchall()
