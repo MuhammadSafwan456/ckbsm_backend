@@ -9,7 +9,7 @@ def run():
     record_created = []
     record_not_created = []
     while True:
-        date = input("Enter date(YYYYMMDD) for which you want to create attendance: ")
+        date = input("Enter date(YYYYMMDD) for which you want to create attendance record: ")
         if not validate_date(date):
             continue
         enrollments = find_all_enrollments()
