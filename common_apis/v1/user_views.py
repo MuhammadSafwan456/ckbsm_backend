@@ -1,17 +1,19 @@
-from flask import Blueprint
+# import libraries
+from flask import request, Blueprint
+
+# local imports
+from codes.response_codes import SUCCESS, INVALID_PARAMETER, INVALID_QUERY_PARAM
+from codes.response_codes import USER_NOT_FOUND, ROLE_NOT_FOUND, MADRASSA_DETAILS_NOT_FOUND
+from codes.status_codes import OK, BAD_REQUEST, CREATED
+from constants.route_constants import ADD_USER, GET_USERS, ENROLL_USER
+from constants.flask_constants import POST, GET
+from constants import general_constants as gc
 from helper.authorization import authorize_request
-from helper.request_response import *
-from helper.validate import *
-from constants.route_constants import *
-from constants.flask_constants import *
-from constants.column_names import *
-from codes.status_codes import *
-from codes.response_codes import *
-from helper.user import find_user_by_id, enroll_user_in_madrassa
 from helper.madrassa_detail import find_madrassa_detail_by_id
+from helper.request_response import requires, make_general_response
 from helper.role import find_role_by_id
-from helper.request_response import requires
-from helper.user import add_new_user, find_user_by_cnic_or_contact
+from helper.user import find_user_by_id, enroll_user_in_madrassa, add_new_user, find_user_by_cnic_or_contact
+from helper.validate import validate_date, validate_contact, validate_cnic, validate_email
 
 user_api = Blueprint("user_api", __name__, url_prefix='')
 
@@ -57,12 +59,12 @@ def add_user():
 @authorize_request
 def get_users():
     query_params = request.args
-    if not query_params.get(CNIC) and not query_params.get(CONTACT):
+    if not query_params.get(gc.CNIC) and not query_params.get(gc.CONTACT):
         response = make_general_response(INVALID_QUERY_PARAM, "Invalid query params")
         return response, BAD_REQUEST
 
-    cnic = query_params.get(CNIC)
-    contact = query_params.get(CONTACT)
+    cnic = query_params.get(gc.CNIC)
+    contact = query_params.get(gc.CONTACT)
 
     if cnic and not validate_cnic(cnic):
         response = make_general_response(INVALID_PARAMETER, "Invalid CNIC")

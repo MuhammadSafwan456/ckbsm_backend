@@ -1,14 +1,16 @@
+# import libraries
 from flask import request, Blueprint
+
+# local imports
+from constants.route_constants import GET_SHIFTS, ADD_SHIFT, UPDATE_SHIFT, DELETE_SHIFTS
+from constants.flask_constants import GET, PUT, POST, DELETE
+from constants import general_constants as gc
+from codes.status_codes import OK, BAD_REQUEST, CREATED
+from codes.response_codes import SUCCESS, FAIL, INVALID_PARAMETER
 from helper.authorization import authorize_request
-from helper.request_response import *
-from helper.validate import *
-from constants.route_constants import *
-from constants.flask_constants import *
-from codes.status_codes import *
-from codes.response_codes import *
 from helper.shift import get_all_shifts, add_new_shift, update_shift, delete_shift
-from common_apis.v1 import app
-from helper.request_response import requires
+from helper.request_response import make_general_response, requires
+from helper.validate import validate_time
 
 shift_api = Blueprint("shift_api", __name__, url_prefix='')
 
