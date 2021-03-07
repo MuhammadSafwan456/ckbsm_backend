@@ -136,3 +136,15 @@ def add_new_user(user):
         user = find_user_by_id(index)
         return user, SUCCESS, "SUCCESS"
     return [], FAIL, "FAIL"
+
+
+def find_all_enrollments():
+    query = f"select * from {ENROLLMENT}"
+    r = select_query(query)
+    if r:
+        result = r.fetchall()
+        enrollment = []
+        for i in result:
+            enrollment.append(map_response(i, mapper))
+        return enrollment
+    return None
