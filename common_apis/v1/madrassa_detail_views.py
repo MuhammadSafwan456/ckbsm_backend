@@ -1,13 +1,15 @@
+# import libraries
 from flask import request, Blueprint
+
+# local imports
+from constants.route_constants import SET_MADRASSA_DETAILS, GET_MADRASSA_DETAILS
+from constants.flask_constants import GET, POST
+from constants import general_constants as gc
+from codes.status_codes import OK, BAD_REQUEST, CREATED
+from codes.response_codes import SUCCESS, MADRASSA_DETAILS_NOT_FOUND
 from helper.authorization import authorize_request
-from helper.request_response import *
-from constants.route_constants import *
-from constants.flask_constants import *
-from codes.status_codes import *
-from codes.response_codes import *
-from helper.request_response import requires
 from helper.madrassa_detail import set_new_madrassa_details, get_madrassa_detail_by_id
-from common_apis.v1 import app
+from helper.request_response import make_general_response, requires
 
 madrassa_detail_api = Blueprint("madrassa_detail_api", __name__, url_prefix='')
 
@@ -38,5 +40,5 @@ def get_madrassa_details():
         response[gc.DATA] = madrassa_detail
         return response, OK
     else:
-        response = make_general_response(MADRASSA_NOT_FOUND, "Madrassa Details Not found")
+        response = make_general_response(MADRASSA_DETAILS_NOT_FOUND, "Madrassa Details Not found")
         return response, BAD_REQUEST
