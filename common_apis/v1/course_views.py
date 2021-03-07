@@ -1,17 +1,15 @@
+# import libraries
 from flask import request, Blueprint
+
+# local imports
+from constants.route_constants import GET_COURSES, ADD_COURSES, UPDATE_COURSES, DELETE_COURSES
+from constants.flask_constants import GET, PUT, POST, DELETE
+from constants import general_constants as gc
+from codes.status_codes import OK, BAD_REQUEST, CREATED
+from codes.response_codes import SUCCESS, FAIL
 from helper.authorization import authorize_request
-from helper.request_response import *
-from config.db_column_to_response import mapper
-from constants.route_constants import *
-from constants.flask_constants import *
-from constants.table_names import *
-from constants.column_names import *
-from database_layer.database import select_query, insert_query
-from codes.status_codes import *
-from codes.response_codes import *
 from helper.course import get_all_courses, add_new_course, update_course, delete_course
-from common_apis.v1 import app
-from helper.request_response import requires
+from helper.request_response import make_general_response, requires
 
 course_api = Blueprint("course_api", __name__, url_prefix='')
 
