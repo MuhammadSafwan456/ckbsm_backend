@@ -1,9 +1,8 @@
+# import libraries
 from flask import Flask, app
-from constants.flask_constants import *
 from hashlib import sha256
-from config.app_config import JWT_SECRET_KEY
-from constants.general_constants import *
 
+# local imports
 from common_apis.v1.attendance_views import attendance_api
 from common_apis.v1.course_views import course_api
 from common_apis.v1.gender_views import gender_api
@@ -13,6 +12,9 @@ from common_apis.v1.madrassa_views import madrassa_api
 from common_apis.v1.role_views import role_api
 from common_apis.v1.shift_views import shift_api
 from common_apis.v1.user_views import user_api
+from config.app_config import JWT_SECRET_KEY
+from constants.flask_constants import DEBUG, SECRET_KEY
+from constants.general_constants import ASCII
 
 app = Flask(__name__)
 app.config[DEBUG] = True
