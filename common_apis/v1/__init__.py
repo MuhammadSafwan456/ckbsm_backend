@@ -37,5 +37,4 @@ if __name__ == '__main__':
     add_attendance_scheduler.add_job(id='add_attendance_scheduler', func=cron_add_attendance_record_for_all_enrollments,
                                      trigger='interval', seconds=24, start_date='01:00:00')
     add_attendance_scheduler.start()
-
     app.run()
