@@ -4,7 +4,6 @@ from helper.user import find_all_enrollments
 from helper.validate import validate_date
 
 
-
 def run():
     recorded_already_present = []
     record_created = []
