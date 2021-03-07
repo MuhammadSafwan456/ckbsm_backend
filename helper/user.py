@@ -1,14 +1,13 @@
+from codes.response_codes import USER_ALREADY_ENROLLED, SUCCESS, FAIL, GENDER_NOT_FOUND
 from constants.table_names import USER, ENROLLMENT
-from constants.column_names import ID, USER_ID, ROLE_ID, MADRASSA_DETAIL_ID, ENROLLMENT_DATE, GENDER_ID, USER_NAME, \
-    FATHER_NAME, CNIC, EMAIL, MOTHER_TONGUE, CONTACT, GUARDIAN_NAME, GUARDIAN_CONTACT, DOB, AGE
-from codes.response_codes import GENDER_NOT_FOUND
-import constants.general_constants as gc
+from constants.column_names import ID, USER_ID, FATHER_NAME, MADRASSA_DETAIL_ID, ENROLLMENT_DATE, GENDER_ID, USER_NAME
+from constants.column_names import ROLE_ID, CNIC, EMAIL, MOTHER_TONGUE, CONTACT, GUARDIAN_NAME, GUARDIAN_CONTACT
+from constants.column_names import AGE, DOB
+from constants import general_constants as gc
 from config.db_column_to_response import mapper
-from database_layer.database import select_query, insert_query
+from database_layer import database
 from helper.request_response import map_response
 from helper.database import select_max
-from codes.response_codes import USER_ALREADY_ENROLLED, SUCCESS, FAIL
-from database_layer import database
 
 
 def user_already_enrolled(user, madrassa_detail, role):
@@ -17,7 +16,7 @@ def user_already_enrolled(user, madrassa_detail, role):
             f"{ROLE_ID}={role[gc.ID]} and " \
             f"{MADRASSA_DETAIL_ID}={madrassa_detail[gc.ID]}"
     print(query)
-    r = select_query(query)
+    r = database.select_query(query)
     if r:
         result = r.fetchall()
         print(result)
@@ -31,7 +30,7 @@ def user_already_enrolled(user, madrassa_detail, role):
 
 def find_user_by_id(_id):
     query = f"select * from {USER} where {ID}={_id}"
-    r = select_query(query)
+    r = database.select_query(query)
     if r:
         result = r.fetchall()
         user = None
@@ -43,7 +42,7 @@ def find_user_by_id(_id):
 
 def find_user_by_gender(gender_id):
     query = f"select * from {USER} where {GENDER_ID}={gender_id}"
-    r = select_query(query)
+    r = database.select_query(query)
     if r:
         result = r.fetchall()
         user = None
@@ -55,7 +54,7 @@ def find_user_by_gender(gender_id):
 
 def find_enrollment_of_role(role_id):
     query = f"select * from {ENROLLMENT} where {ROLE_ID}={role_id}"
-    r = select_query(query)
+    r = database.select_query(query)
     if r:
         result = r.fetchall()
         enrollment = None
@@ -140,7 +139,7 @@ def add_new_user(user):
 
 def find_all_enrollments():
     query = f"select * from {ENROLLMENT}"
-    r = select_query(query)
+    r = database.select_query(query)
     if r:
         result = r.fetchall()
         enrollment = []

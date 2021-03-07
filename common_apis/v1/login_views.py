@@ -1,9 +1,21 @@
-from constants.route_constants import *
-from config.app_config import JWT_SECRET_KEY
+from jwt import encode
+from hashlib import sha256
+from flask import request
+
+from constants import general_constants as gc
+from constants.route_constants import LOGIN, ADMIN_DASHBOARD
 from flask import Blueprint, current_app
-from helper.authorization import *
-from helper.request_response import *
-from helper.database import *
+from helper.request_response import make_general_response
+from helper import database
+from constants.flask_constants import GET, SECRET_KEY
+from codes.status_codes import OK, UNAUTHORIZED
+from constants.table_names import ADMIN
+from helper.authorization import authorize_request
+from constants.column_names import USERNAME, PASSWORD, ROLE_ID, ID
+from codes.status_codes import BAD_REQUEST
+from codes.response_codes import SUCCESS, ADMIN_NOT_FOUND, FAIL
+from codes.response_codes import MISSING_QUERY_PARAM, ADDITIONAL_QUERY_PARAM, INVALID_QUERY_PARAM
+from constants.table_names import MADRASSA, COURSE, SHIFT, ENROLLMENT
 
 login_api = Blueprint("login_api", __name__, url_prefix='')
 
@@ -18,12 +30,12 @@ def login():
     query = f"Select * from {ADMIN} where {USERNAME} = '{auth_body.get(gc.USERNAME)}' and" \
             f" {PASSWORD} = '{auth_body.get(gc.PASSWORD)}' "
 
-    r = select_query(query)
+    r = database.select_query(query)
     result = r.fetchall()
     if len(result) != 0:
         if result[0][USERNAME] == auth_body.get(USERNAME) and result[0][PASSWORD] == auth_body.get(PASSWORD):
             response = make_general_response(SUCCESS, "SUCCESS")
-            token = jwt.encode(
+            token = encode(
                 {
                     USERNAME: auth_body.get(gc.USERNAME),
                     PASSWORD: sha256(auth_body.get(gc.PASSWORD).encode(gc.ASCII)).hexdigest()
@@ -44,7 +56,7 @@ def login():
 @authorize_request
 def admin_dashboard():
     def first_row_first_col(query):
-        res = select_query(query)
+        res = database.select_query(query)
         res = res.fetchall()
         count = res[0][ID]
         return count
@@ -66,7 +78,7 @@ def admin_dashboard():
     username = query_params.get(gc.ADMIN)
 
     query = f"Select {USERNAME} from {ADMIN} where {USERNAME} = '{username}' "
-    r = select_query(query)
+    r = database.select_query(query)
     result = r.fetchall()
 
     if len(result) == 0:

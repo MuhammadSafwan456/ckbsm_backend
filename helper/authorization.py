@@ -1,16 +1,16 @@
 from functools import wraps
-from helper.request_response import make_general_response
-from codes.status_codes import *
-from codes.response_codes import *
-import constants.general_constants as gc
-from constants.table_names import *
-from constants.column_names import *
-from database_layer.database import select_query
-from constants.flask_constants import *
+from jwt import decode
+from flask import current_app
 from hashlib import sha256
-import jwt
-from flask import request, current_app
-from helper.request_response import request_header
+
+from codes.status_codes import UNAUTHORIZED, BAD_REQUEST
+from codes.response_codes import FAIL, MISSING_TOKEN
+from constants.table_names import ADMIN
+from constants.column_names import USERNAME, PASSWORD
+from constants.flask_constants import SECRET_KEY, X_ACCESS_TOKEN
+from constants import general_constants as gc
+from database_layer.database import select_query
+from helper.request_response import request_header, make_general_response
 
 
 def authorize_request(f):
@@ -26,7 +26,7 @@ def authorize_request(f):
 
         # try:
         algorithm = gc.SHA256
-        data = jwt.decode(token, current_app.config[SECRET_KEY], algorithms=[algorithm])
+        data = decode(token, current_app.config[SECRET_KEY], algorithms=[algorithm])
         query = f"Select {PASSWORD} from {ADMIN} where {USERNAME} = '{data.get(gc.USERNAME)}'"
         r = select_query(query)
         if r:

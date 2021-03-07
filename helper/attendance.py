@@ -1,11 +1,11 @@
+from config.config import DEFAULT_ATTENDANCE_STATUS
+from config.db_column_to_response import mapper
 from constants import general_constants as gc
-from constants.table_names import ATTENDANCE, ATTENDANCE_RECORD
 from constants.column_names import ATTENDANCE_DATE, ENROLLMENT_ID, ID, STATUS, STATUS_ID
+from constants.table_names import ATTENDANCE, ATTENDANCE_RECORD
 from database_layer import database
 from helper.request_response import map_response
-from config.db_column_to_response import mapper
 from helper.database import select_max
-from config.config import DEFAULT_ATTENDANCE_STATUS
 
 
 def find_attendance_record_of_enrollment_at_date(enrollment_id, date):

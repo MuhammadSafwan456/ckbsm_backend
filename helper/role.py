@@ -1,10 +1,10 @@
-from constants.table_names import ROLE
+from codes.response_codes import ROLE_NOT_FOUND, SUCCESS, FAIL
 from constants.column_names import ID, ROLE_NAME
+from constants.table_names import ROLE
 from config.db_column_to_response import mapper
 from database_layer import database
 from helper.database import select_max
 from helper.request_response import map_response
-from codes.response_codes import ROLE_NOT_FOUND, SUCCESS, FAIL
 from helper.user import find_enrollment_of_role
 
 

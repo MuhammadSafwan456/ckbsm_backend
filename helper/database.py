@@ -1,5 +1,5 @@
+from constants.column_names import ID
 from database_layer.database import select_query
-from constants.column_names import *
 
 
 def select_max(table):
@@ -11,4 +11,3 @@ def select_max(table):
             return result[0].get(ID)
         return 0
     return None
-

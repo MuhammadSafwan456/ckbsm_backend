@@ -1,6 +1,6 @@
 from codes.response_codes import SHIFT_NOT_FOUND, COURSE_NOT_FOUND, MADRASSA_NOT_FOUND, ALREADY_EXIST, SUCCESS, FAIL
-from constants.table_names import MADRASSA_DETAILS, MADRASSA, SHIFT, COURSE
 from constants.column_names import ID, SHIFT_ID, COURSE_ID, MADRASSA_ID
+from constants.table_names import MADRASSA_DETAILS, MADRASSA, SHIFT, COURSE
 from constants import general_constants as gc
 from config.db_column_to_response import mapper
 from database_layer import database

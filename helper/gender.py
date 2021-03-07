@@ -1,10 +1,10 @@
-from constants.table_names import GENDER
-from constants.column_names import ID, GENDER
+from codes.response_codes import GENDER_NOT_FOUND, SUCCESS, FAIL
 from config.db_column_to_response import mapper
+from constants.column_names import ID, GENDER
+from constants.table_names import GENDER
 from database_layer import database
 from helper.database import select_max
 from helper.request_response import map_response
-from codes.response_codes import GENDER_NOT_FOUND, SUCCESS, FAIL
 from helper.user import find_user_by_gender
 
 
