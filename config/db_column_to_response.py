@@ -3,7 +3,6 @@ from constants import general_constants as gc
 
 mapper = {
     # Query Column name: Response name
-
     ID: gc.ID,
     ROLE_NAME: gc.NAME,
     SHIFT_NAME: gc.NAME,
@@ -33,7 +32,4 @@ mapper = {
     ATTENDANCE_DATE: gc.ATTENDANCE_DATE,
     ENROLLMENT_ID: gc.ENROLLMENT_ID,
     STATUS_ID: gc.STATUS_ID
-
-
-
 }
