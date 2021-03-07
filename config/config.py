@@ -4,3 +4,4 @@ def get_value(key):
 
 
 DEFAULT_ATTENDANCE_STATUS = get_value('DEFAULT_ATTENDANCE_STATUS')
+PUBLIC_HOLIDAYS = get_value('PUBLIC_HOLIDAYS')
