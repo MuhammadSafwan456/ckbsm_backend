@@ -24,8 +24,8 @@ def user_already_enrolled(user, madrassa_detail, role):
         for i in result:
             enrollment = map_response(i, mapper)
 
-        return enrollment is not None
-    return True
+        return enrollment is not None, enrollment
+    return True, None
 
 
 def find_user_by_id(_id):
@@ -38,6 +38,19 @@ def find_user_by_id(_id):
             user = map_response(i, mapper)
         return user
     return None
+
+
+def find_enrollment_by_id(_id):
+    query = f"select * from {ENROLLMENT} where {ID}={_id}"
+    r = database.select_query(query)
+    if r:
+        result = r.fetchall()
+        enrollment = None
+        for i in result:
+            enrollment = map_response(i, mapper)
+        return enrollment
+    return None
+
 
 
 def find_user_by_gender(gender_id):
@@ -94,8 +107,9 @@ def enroll_user_in_madrassa_by_id(_id, user, madrassa_detail, role, enrollment_d
 
 
 def enroll_user_in_madrassa(user, madrassa_detail, role, enrollment_date):
-    if user_already_enrolled(user, madrassa_detail, role):
-        return False, USER_ALREADY_ENROLLED, "User Already enrolled"
+    already_enrolled, enrollment = user_already_enrolled(user, madrassa_detail, role)
+    if already_enrolled:
+        return False, USER_ALREADY_ENROLLED, f"User Already enrolled. Enrollment ID {enrollment[gc.ID]}"
 
     max_index = select_max(ENROLLMENT)
     if max_index is None:
