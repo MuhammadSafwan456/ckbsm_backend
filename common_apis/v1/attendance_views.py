@@ -81,24 +81,17 @@ def bulk_user_attendance():
         marked, code, _ = mark_attendance(enrollment_id, date, status_id)
         if marked:
             marked_list.append(enrollment_id)
-        elif code==ATTENDANCE_ALREADY_MARKED:
+        elif code == ATTENDANCE_ALREADY_MARKED:
             already_marked.append(enrollment_id)
         else:
             unmark_list.append(enrollment_id)
 
-    response = make_general_response(SUCCESS,"SUCCESS")
+    response = make_general_response(SUCCESS, "SUCCESS")
     response["marked"] = marked_list
     response['unmarked'] = unmark_list
     response["enrollmentNotFound"] = enrollment_not_found
     response["alreadyMarked"] = already_marked
-    return response,OK
-
-
-
-
-
-
-
+    return response, OK
 
 
 @attendance_api.route(GET_ALL_ATTENDANCE, methods=[GET])
