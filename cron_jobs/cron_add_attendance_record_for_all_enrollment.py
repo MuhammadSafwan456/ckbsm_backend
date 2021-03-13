@@ -7,6 +7,7 @@ from config.config import PUBLIC_HOLIDAYS
 
 
 def cron_add_attendance_record_for_all_enrollments():
+    print("cron_add_attendance_record_for_all_enrollments started")
     date = datetime.today().strftime('%d-%m')
     if date in PUBLIC_HOLIDAYS:
         return
@@ -18,6 +19,7 @@ def cron_add_attendance_record_for_all_enrollments():
         attendance = find_attendance_record_of_enrollment_at_date(enrollment[gc.ID], date)
         if attendance is None:
             create_attendance_for_enrollment_at_date(enrollment[gc.ID], date)
+    print("cron_add_attendance_record_for_all_enrollments ended")
 
 
 if __name__ == '__main__':
