@@ -4,3 +4,4 @@ def get_value(key):
 
 
 JWT_SECRET_KEY = get_value('JWT_SECRET_KEY')
+FLASK_KEY_SORTING = get_value('FLASK_KEY_SORTING')

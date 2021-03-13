@@ -5,6 +5,7 @@ config = {
     'DB_HOST': 'localhost',
     'DB_NAME': 'ckbsm',
     'JWT_SECRET_KEY': 'this is top secret',
+    'FLASK_KEY_SORTING': False,
     'DEFAULT_ATTENDANCE_STATUS': 'Absent',
     'PUBLIC_HOLIDAYS': [
         '05-02',  # kashmir day

@@ -1,5 +1,5 @@
 # import libraries
-from flask import Flask, app
+from flask import Flask, app, jsonify
 from hashlib import sha256
 from flask_apscheduler import APScheduler
 
@@ -13,16 +13,18 @@ from common_apis.v1.madrassa_views import madrassa_api
 from common_apis.v1.role_views import role_api
 from common_apis.v1.shift_views import shift_api
 from common_apis.v1.user_views import user_api
-from config.app_config import JWT_SECRET_KEY
-from constants.flask_constants import DEBUG, SECRET_KEY
+from config.app_config import JWT_SECRET_KEY, FLASK_KEY_SORTING
+from constants.flask_constants import DEBUG, SECRET_KEY, JSON_SORT_KEYS
 from constants.general_constants import ASCII
 from cron_jobs.cron_add_attendance_record_for_all_enrollment import cron_add_attendance_record_for_all_enrollments
+from constants.flask_constants import GET
 
 add_attendance_scheduler = APScheduler()
 
 app = Flask(__name__)
 app.config[DEBUG] = True
 app.config[SECRET_KEY] = sha256(JWT_SECRET_KEY.encode(ASCII)).hexdigest()
+app.config[JSON_SORT_KEYS] = FLASK_KEY_SORTING
 app.register_blueprint(attendance_api)
 app.register_blueprint(course_api)
 app.register_blueprint(gender_api)
@@ -32,6 +34,15 @@ app.register_blueprint(madrassa_api)
 app.register_blueprint(role_api)
 app.register_blueprint(shift_api)
 app.register_blueprint(user_api)
+
+
+@app.route('/', methods=[GET])
+def home():
+    return jsonify({
+        "WELCOME": "CKBSM",
+        "APPLICATION STATUS": "RUNNING"
+    })
+
 
 if __name__ == '__main__':
     add_attendance_scheduler.add_job(id='add_attendance_scheduler', func=cron_add_attendance_record_for_all_enrollments,
