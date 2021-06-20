@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+Database access layer
+"""
+
+
 import pymysql
 from config.database_config import DB_NAME, DB_HOST, DB_PASSWORD, DB_USERNAME
 from constants.database_constants import NO_CONNECTION, NO_CURSOR

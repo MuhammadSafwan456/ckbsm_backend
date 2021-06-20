@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+cron job to create attendance record o daily basis
+"""
+
+
 from datetime import datetime
 
 from helper.user import find_all_enrollments
