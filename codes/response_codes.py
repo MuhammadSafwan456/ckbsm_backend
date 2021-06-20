@@ -1,3 +1,8 @@
+"""
+Author : s.aryani456@gmail.com
+Response Codes Return by API
+"""
+
 SUCCESS = '00'
 USER_NOT_FOUND = '01'
 MADRASSA_NOT_FOUND = '02'
