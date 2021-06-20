@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to DB
+"""
+
+
 from constants.column_names import ID
 from database_layer.database import select_query
 

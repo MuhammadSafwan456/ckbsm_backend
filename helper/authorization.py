@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to authorize API
+"""
+
+
 from functools import wraps
 from jwt import decode
 from flask import current_app

@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to role
+"""
+
+
 from codes.response_codes import USER_ALREADY_ENROLLED, SUCCESS, FAIL, GENDER_NOT_FOUND
 from constants.table_names import USER, ENROLLMENT
 from constants.column_names import ID, USER_ID, FATHER_NAME, MADRASSA_DETAIL_ID, ENROLLMENT_DATE, GENDER_ID, USER_NAME

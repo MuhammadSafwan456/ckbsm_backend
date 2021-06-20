@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to role
+"""
+
+
 from codes.response_codes import ROLE_NOT_FOUND, SUCCESS, FAIL
 from constants.column_names import ID, ROLE_NAME
 from constants.table_names import ROLE

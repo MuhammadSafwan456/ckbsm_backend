@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to course
+"""
+
+
 from codes.response_codes import COURSE_NOT_FOUND, SUCCESS, FAIL
 from constants.column_names import ID, COURSE_NAME
 from constants.table_names import COURSE

@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to gender
+"""
+
+
 from codes.response_codes import GENDER_NOT_FOUND, SUCCESS, FAIL
 from config.db_column_to_response import mapper
 from constants.column_names import ID, GENDER

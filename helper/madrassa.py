@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to madrassa
+"""
+
+
 from codes.response_codes import MADRASSA_NOT_FOUND, SUCCESS, FAIL
 from constants.column_names import ID, MADRASSA_NAME
 from constants.table_names import MADRASSA

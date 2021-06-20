@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to shift
+"""
+
+
 from codes.response_codes import SHIFT_NOT_FOUND, SUCCESS, FAIL
 from constants.table_names import SHIFT
 from constants.column_names import ID, SHIFT_NAME, START_TIME, END_TIME

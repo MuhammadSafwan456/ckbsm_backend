@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to attendance
+"""
+
+
 from config.config import DEFAULT_ATTENDANCE_STATUS
 from config.db_column_to_response import mapper
 from constants import general_constants as gc

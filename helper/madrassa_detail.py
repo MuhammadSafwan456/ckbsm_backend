@@ -1,3 +1,8 @@
+"""
+Author : s.aryani456@gmail.com
+helper functions related to madrassa details
+"""
+
 from codes.response_codes import SHIFT_NOT_FOUND, COURSE_NOT_FOUND, MADRASSA_NOT_FOUND, ALREADY_EXIST, SUCCESS, FAIL
 from constants.column_names import ID, SHIFT_ID, COURSE_ID, MADRASSA_ID
 from constants.table_names import MADRASSA_DETAILS, MADRASSA, SHIFT, COURSE
