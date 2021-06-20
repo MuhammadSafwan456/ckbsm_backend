@@ -14,6 +14,6 @@ config = {
         '14-08',  # independence day
         '22-08',  # random
         '25-12',  # quaid day
-        '14-03'  # testing
+        # '14-03'  # testing
     ]
 }
