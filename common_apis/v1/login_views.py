@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+Views related to login mechanism
+"""
+
+
 from jwt import encode
 from hashlib import sha256
 from flask import request

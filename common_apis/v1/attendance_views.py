@@ -1,3 +1,8 @@
+"""
+Author : s.aryani456@gmail.com
+Views related to attendance
+"""
+
 from flask import request, jsonify, Blueprint
 from helper.authorization import authorize_request
 from helper.request_response import *

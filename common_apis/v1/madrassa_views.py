@@ -1,3 +1,9 @@
+"""
+Author : s.aryani456@gmail.com
+Views related to madrassa
+"""
+
+
 # import libraries
 from flask import request, Blueprint
 

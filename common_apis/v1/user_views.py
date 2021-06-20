@@ -1,3 +1,8 @@
+"""
+Author : s.aryani456@gmail.com
+Views related to user
+"""
+
 # import libraries
 from flask import request, Blueprint
 
